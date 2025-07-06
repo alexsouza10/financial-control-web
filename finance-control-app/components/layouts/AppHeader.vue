@@ -1,20 +1,44 @@
 <template>
   <v-app-bar app color="primary" dark elevate-on-scroll>
-    <v-toolbar-title class="d-flex align-center" style="cursor: pointer" @click="goHome">
+    <v-toolbar-title
+      class="d-flex align-center"
+      style="cursor: pointer"
+      @click="goHome"
+    >
       <v-icon left>mdi-cash-multiple</v-icon>
       Gestão de Gastos
     </v-toolbar-title>
 
     <v-spacer />
 
-    <v-btn text :to="{ name: 'index' }" :class="{ 'v-btn--active': isRoute('index') }">Home</v-btn>
-    <v-btn text :to="{ name: 'expenses' }" :class="{ 'v-btn--active': isRoute('expenses') }">Despesas</v-btn>
+    <v-btn
+      text
+      :to="{ name: 'index' }"
+      :class="{ 'v-btn--active': isRoute('index') }"
+      >Home</v-btn
+    >
+    <v-btn
+      text
+      :to="{ name: 'expenses' }"
+      :class="{ 'v-btn--active': isRoute('expenses') }"
+      >Despesas</v-btn
+    >
+    <v-btn
+      text
+      :to="{ name: 'analytics' }"
+      :class="{ 'v-btn--active': isRoute('analytics') }"
+      >Dashboard</v-btn
+    >
 
     <v-btn icon aria-label="Notificações"><v-icon>mdi-bell</v-icon></v-btn>
 
     <v-btn icon aria-label="Alternar tema" @click="toggleTheme">
       <v-icon>
-        {{ theme.global.name.value === 'light' ? 'mdi-weather-night' : 'mdi-white-balance-sunny' }}
+        {{
+          theme.global.name.value === "light"
+            ? "mdi-weather-night"
+            : "mdi-white-balance-sunny"
+        }}
       </v-icon>
     </v-btn>
 
@@ -33,17 +57,16 @@
   </v-app-bar>
 </template>
 
-
 <script setup>
 import { useRouter, useRoute } from "vue-router";
-import { defineEmits } from "vue";
-import { useTheme } from 'vuetify' 
+import { defineEmits, onMounted } from "vue";
+import { useTheme } from "vuetify";
 
 const router = useRouter();
 const route = useRoute();
 const emit = defineEmits(["logout"]);
 
-const theme = useTheme(); 
+const theme = useTheme();
 
 function goHome() {
   router.push({ name: "index" });
@@ -59,10 +82,17 @@ function logout() {
 
 function toggleTheme() {
   const current = theme.global.name.value;
-  const newTheme = current === 'light' ? 'dark' : 'light';
+  const newTheme = current === "light" ? "dark" : "light";
   theme.global.name.value = newTheme;
-  localStorage.setItem('theme', newTheme);
+  localStorage.setItem("theme", newTheme);
 }
+
+onMounted(() => {
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme) {
+    theme.global.name.value = savedTheme;
+  }
+});
 </script>
 
 <style scoped>
