@@ -15,22 +15,29 @@
       text
       :to="{ name: 'index' }"
       :class="{ 'v-btn--active': isRoute('index') }"
-      >Home</v-btn
     >
+      Home
+    </v-btn>
+
     <v-btn
       text
       :to="{ name: 'expenses' }"
       :class="{ 'v-btn--active': isRoute('expenses') }"
-      >Despesas</v-btn
     >
+      Despesas
+    </v-btn>
+
     <v-btn
       text
       :to="{ name: 'analytics' }"
       :class="{ 'v-btn--active': isRoute('analytics') }"
-      >Dashboard</v-btn
     >
+      Dashboard
+    </v-btn>
 
-    <v-btn icon aria-label="Notificações"><v-icon>mdi-bell</v-icon></v-btn>
+    <v-btn icon aria-label="Notificações">
+      <v-icon>mdi-bell</v-icon>
+    </v-btn>
 
     <v-btn icon aria-label="Alternar tema" @click="toggleTheme">
       <v-icon>
@@ -59,33 +66,30 @@
 
 <script setup>
 import { useRouter, useRoute } from "vue-router";
-import { defineEmits, onMounted } from "vue";
 import { useTheme } from "vuetify";
 
 const router = useRouter();
 const route = useRoute();
-const emit = defineEmits(["logout"]);
-
 const theme = useTheme();
 
-function goHome() {
+const emit = defineEmits(["logout"]);
+
+const goHome = () => {
   router.push({ name: "index" });
-}
+};
 
-function isRoute(name) {
-  return route.name === name;
-}
+const isRoute = (name) => route.name === name;
 
-function logout() {
+const logout = () => {
   emit("logout");
-}
+};
 
-function toggleTheme() {
+const toggleTheme = () => {
   const current = theme.global.name.value;
   const newTheme = current === "light" ? "dark" : "light";
   theme.global.name.value = newTheme;
   localStorage.setItem("theme", newTheme);
-}
+};
 
 onMounted(() => {
   const savedTheme = localStorage.getItem("theme");
