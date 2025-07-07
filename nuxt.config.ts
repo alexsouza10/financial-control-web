@@ -6,7 +6,10 @@ export default defineNuxtConfig({
   ssr: false,
 
   app: {
-    baseURL: "/financial-control/",
+    baseURL:
+      process.env.NODE_ENV === "production" && process.env.VERCEL
+        ? "/"
+        : "/financial-control/",
   },
 
   css: [
@@ -44,6 +47,7 @@ export default defineNuxtConfig({
   },
 
   nitro: {
+    preset: "vercel",
     prerender: {
       crawlLinks: true,
       routes: ["/", "/404.html"],
