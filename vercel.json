@@ -1,14 +1,5 @@
 {
-  "builds": [
-    {
-      "src": "nuxt.config.ts",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/"
-    }
-  ]
+  "devCommand": "npm run dev",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".vercel/output/static"
 }
