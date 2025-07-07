@@ -4,12 +4,12 @@ import type { UserConfig } from "vite";
 
 export default defineNuxtConfig({
   ssr: false,
-  target: "static", // ← necessário para build estático
+  target: "static", 
 
   devtools: { enabled: true },
 
   app: {
-    baseURL: "/financial-control/", // ← necessário para GitHub Pages
+    baseURL: "/financial-control/",
   },
 
   css: [
@@ -48,5 +48,10 @@ export default defineNuxtConfig({
 
   nitro: {
     compatibilityDate: "2025-07-05",
+
+    prerender: {
+      crawlLinks: true,
+      routes: ["/"],
+    },
   },
 });
