@@ -4,7 +4,13 @@ import type { UserConfig } from "vite";
 
 export default defineNuxtConfig({
   ssr: false,
+  target: "static", // ← necessário para build estático
+
   devtools: { enabled: true },
+
+  app: {
+    baseURL: "/financial-control/", // ← necessário para GitHub Pages
+  },
 
   css: [
     "vuetify/lib/styles/main.sass",
