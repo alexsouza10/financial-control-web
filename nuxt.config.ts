@@ -9,10 +9,6 @@ export default defineNuxtConfig({
     baseURL: "/financial-control/",
   },
 
-  router: {
-    base: "/financial-control/",
-  },
-
   css: [
     "vuetify/lib/styles/main.sass",
     "@mdi/font/css/materialdesignicons.min.css",
