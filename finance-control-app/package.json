@@ -14,6 +14,7 @@
     "@nuxt/eslint": "^1.5.2",
     "@nuxt/fonts": "^0.11.4",
     "@pinia/nuxt": "^0.11.1",
+    "date-fns": "^4.1.0",
     "eslint": "^9.30.1",
     "nuxt": "^3.17.6",
     "pinia": "^3.0.3",

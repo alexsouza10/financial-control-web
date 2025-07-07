@@ -3,12 +3,15 @@ import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 
 export default defineNuxtPlugin((nuxtApp) => {
-  const storedTheme =
-    typeof window !== "undefined" ? localStorage.getItem("theme") : null;
-  const initialDefaultTheme = storedTheme || "light";
+  const isClient = typeof window !== "undefined";
+  const storedTheme = isClient ? localStorage.getItem("theme") : null;
+  const validThemes = ["light", "dark"];
+  const initialDefaultTheme = validThemes.includes(storedTheme || "")
+    ? storedTheme!
+    : "dark";
 
   const vuetify = createVuetify({
-    ssr: true, 
+    ssr: true,
     components,
     directives,
     theme: {

@@ -1,27 +1,78 @@
 <template>
-  <v-row class="mb-6">
-    <v-col cols="12" md="6">
-      <v-card outlined class="pa-4 text-center">
-        <v-icon size="60" color="green-darken-2" class="mb-2">mdi-cash-multiple</v-icon>
-        <v-card-title class="text-h5 font-weight-bold">Total</v-card-title>
-        <v-card-text class="text-h4 font-weight-bold text-green-darken-2">
-          R$ {{ store.totalExpenses.toFixed(2) }}
-        </v-card-text>
-      </v-card>
+  <v-row class="mb-6" justify="center" align="center" dense>
+    <v-col cols="12" md="4">
+      <ExpenseCard
+        icon="mdi-cash-multiple"
+        title="Total"
+        :value="store.totalExpenses"
+        color="green darken-2"
+      />
     </v-col>
-    <v-col cols="12" md="6">
-      <v-card outlined class="pa-4 text-center">
-        <v-icon size="60" color="blue-darken-2" class="mb-2">mdi-calculator</v-icon>
-        <v-card-title class="text-h5 font-weight-bold">Média</v-card-title>
-        <v-card-text class="text-h4 font-weight-bold text-blue-darken-2">
-          R$ {{ store.averageExpense.toFixed(2) }}
-        </v-card-text>
-      </v-card>
+
+    <v-col cols="12" md="4">
+      <ExpenseCard
+        icon="mdi-calculator"
+        title="Média"
+        :value="store.averageExpense"
+        color="blue darken-2"
+      />
+    </v-col>
+
+    <v-col cols="12" md="4">
+      <ExpenseCard
+        icon="mdi-wallet"
+        title="Salário"
+        :value="store.salary"
+        color="orange darken-2"
+        edit-icon="mdi-pencil"
+        edit-title="Editar salário"
+        @edit-click="openDialog"
+      />
     </v-col>
   </v-row>
+
+  <v-row justify="center" align="center" dense class="mb-6">
+    <v-col cols="12" md="4">
+      <ExpenseCard
+        icon="mdi-cash-check"
+        title="Sobra"
+        :value="restante"
+        color="teal darken-2"
+      />
+    </v-col>
+  </v-row>
+
+  <EditNumberDialog
+    v-model="dialog"
+    :value="store.salary"
+    title="Editar Salário"
+    label="Novo salário"
+    :min="0"
+    suffix="R$"
+    confirm-color="orange darken-2"
+    @update:value="updateSalary"
+  />
 </template>
 
 <script setup lang="ts">
-import { useExpensesStore } from '~/stores/expenses'
-const store = useExpensesStore()
+import { ref, computed } from "vue";
+import { useExpensesStore } from "~/stores/expenses";
+import ExpenseCard from "../molecules/ExpenseCard.vue";
+import EditNumberDialog from "../dialogs/EditNumberDialog.vue";
+
+const store = useExpensesStore();
+const dialog = ref(false);
+
+const restante = computed(() => store.salary - store.totalExpenses);
+
+function openDialog() {
+  dialog.value = true;
+}
+
+function updateSalary(newValue: number) {
+  if (newValue >= 0) {
+    store.setSalary(newValue);
+  }
+  dialog.value = false;
+}
 </script>

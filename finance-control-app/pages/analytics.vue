@@ -1,11 +1,11 @@
 <template>
   <div class="analytics-page">
-    <AnalyticsDashboard />
+    <ExpenseDashboard />
   </div>
 </template>
 
 <script setup lang="ts">
-import AnalyticsDashboard from "~/components/organisms/AnalyticsDashboard.vue";
+import ExpenseDashboard from "~/components/organisms/ExpenseDashboard.vue";
 
 definePageMeta({
   layout: "default",

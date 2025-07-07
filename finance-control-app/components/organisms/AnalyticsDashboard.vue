@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <v-container fluid class="analytics-dashboard">
     <v-card class="pa-4 mb-6" elevation="2">
       <v-card-title class="text-h5 mb-2"
@@ -261,4 +261,4 @@ onMounted(() => {
 .analytics-dashboard {
   padding: 16px;
 }
-</style>
+</style> -->

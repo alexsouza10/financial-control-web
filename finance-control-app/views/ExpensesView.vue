@@ -1,8 +1,8 @@
 <template>
   <v-container class="py-8">
     <ExpenseSummary />
-    <ExpenseRegisterCard @delete="onDelete" />
-    <ExpensesList @delete="onDelete" />
+    <ExpenseRegisterCard />
+    <ExpenseList :expenses="store.expenses" @delete="onDelete" />
     <DeleteDialog v-model="showDialog" @confirm="removeConfirmed" />
     <BaseSnackbar
       v-model="snackbar.show"
@@ -16,8 +16,8 @@
 import { ref } from "vue";
 import ExpenseSummary from "~/components/organisms/ExpenseSummary.vue";
 import ExpenseRegisterCard from "~/components/organisms/ExpenseRegisterCard.vue";
-import ExpensesList from "~/components/organisms/ExpensesList.vue";
-import DeleteDialog from "~/components/molecules/DeleteDialog.vue";
+import ExpenseList from "~/components/organisms/ExpenseList.vue";
+import DeleteDialog from "~/components/dialogs/DeleteDialog.vue";
 import BaseSnackbar from "~/components/atoms/BaseSnackbar.vue";
 import { useExpensesStore } from "~/stores/expenses";
 
