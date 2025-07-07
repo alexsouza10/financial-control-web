@@ -5,10 +5,8 @@
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
-    "generate": "nuxt generate && cpy .output/public/index.html .output/public --rename=404.html && echo > .output/public/.nojekyll",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
-    "deploy": "gh-pages -d .output/public"
+    "postinstall": "nuxt prepare"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
