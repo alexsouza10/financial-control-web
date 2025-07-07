@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
+    "generate": "nuxt generate",
     "dev": "nuxt dev",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
@@ -21,9 +22,5 @@
     "vue": "^3.5.17",
     "vue-router": "^4.5.1",
     "vuetify": "^3.1.6"
-  },
-  "devDependencies": {
-    "cpy-cli": "^5.0.0",
-    "gh-pages": "^6.3.0"
   }
 }
