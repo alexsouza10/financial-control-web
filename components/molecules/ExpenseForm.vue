@@ -119,7 +119,7 @@ const paymentMethods = [
   "Boleto",
 ];
 
-const cards = ["Nubank", "Banco Inter", "Santander", "Bradesco", "Itaú"]; // Idealmente, carregue isso do backend ou defina globalmente
+const cards = ["Nubank", "Banco Inter", "Santander", "Bradesco", "Itaú"]; 
 
 const snackbar = ref({
   show: false,
