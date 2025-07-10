@@ -18,13 +18,17 @@
             elevation="2"
             :style="{ backgroundColor: themeColors.surface }"
           >
-            <v-list-item-avatar
-              :color="themeColors.primary"
-              class="white--text"
-              size="40"
-            >
-              <v-icon size="28">{{ getCategoryIcon(expense.category) }}</v-icon>
-            </v-list-item-avatar>
+            <template #prepend>
+              <v-avatar
+                :color="themeColors.primary"
+                class="white--text"
+                size="40"
+              >
+                <v-icon size="28">{{
+                  getCategoryIcon(expense.category)
+                }}</v-icon>
+              </v-avatar>
+            </template>
 
             <v-list-item-content>
               <v-list-item-title class="text-body-1 font-semibold">
@@ -39,46 +43,48 @@
               </v-list-item-subtitle>
             </v-list-item-content>
 
-            <v-list-item-action>
+            <template #append>
               <div
                 :style="{
-                  color: amountColor(expense.amount),
+                  color: amountColor(expense.value),
                   fontWeight: '700',
                   fontSize: '1.25rem',
                 }"
               >
-                R$ {{ expense.amount.toFixed(2) }}
+                R$ {{ expense.value.toFixed(2) }}
               </div>
-            </v-list-item-action>
 
-            <v-list-item-action>
-              <v-btn icon color="primary" @click="openEditDialog(expense)">
+              <v-btn
+                icon
+                color="primary"
+                variant="text"
+                @click="openEditDialog(expense)"
+              >
                 <v-icon>mdi-pencil</v-icon>
               </v-btn>
-            </v-list-item-action>
 
-            <v-list-item-action>
-              <v-btn icon color="error" @click="openDeleteDialog(expense.id)">
+              <v-btn
+                icon
+                color="error"
+                variant="text"
+                @click="openDeleteDialog(expense.id)"
+              >
                 <v-icon>mdi-delete</v-icon>
               </v-btn>
-            </v-list-item-action>
+            </template>
           </v-list-item>
         </v-list>
       </v-expansion-panel-text>
     </v-expansion-panel>
   </v-expansion-panels>
 
-  <!-- Diálogo de edição -->
   <EditNumberDialog
     v-model="editDialog"
-    :value="editableAmount"
-    title="Editar valor"
-    label="Novo valor"
-    suffix="R$"
-    @update:value="confirmEdit"
+    :expense="editingExpense"
+    title="Editar Gasto"
+    @update:expense="handleExpenseUpdate"
   />
 
-  <!-- Diálogo de exclusão -->
   <v-dialog v-model="deleteDialog" max-width="400" persistent>
     <v-card>
       <v-card-title class="text-h6">Confirmar Exclusão</v-card-title>
@@ -97,48 +103,49 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useTheme } from "vuetify";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import EditNumberDialog from "../dialogs/EditNumberDialog.vue";
+import { useExpensesStore } from "~/stores/expenses";
+import type { Expense, UpdateExpensePayload } from "~/types/expense";
 
-const props = defineProps<{
-  expenses: {
-    id: string;
-    category: string;
-    amount: number;
-    date: string;
-    paymentMethod: string;
-    card: string;
-    installments: number;
-  }[];
-}>();
+const expensesStore = useExpensesStore();
 
-const emit = defineEmits<{
-  (e: "delete", id: string): void;
-  (e: "edit", payload: { id: string; amount: number }): void;
-}>();
+const expenses = computed(() => expensesStore.expenses);
 
-// Editar
 const editDialog = ref(false);
-const editableAmount = ref(0);
-const editingExpenseId = ref<string | null>(null);
+const editingExpense = ref<Expense | null>(null);
 
-function openEditDialog(expense: (typeof props.expenses)[0]) {
-  editingExpenseId.value = expense.id;
-  editableAmount.value = expense.amount;
+function openEditDialog(expense: Expense) {
+  editingExpense.value = expense;
   editDialog.value = true;
 }
 
-function confirmEdit(newAmount: number) {
-  if (editingExpenseId.value) {
-    emit("edit", { id: editingExpenseId.value, amount: newAmount });
-    editDialog.value = false;
+async function handleExpenseUpdate(updatedExpense: Expense) {
+  if (updatedExpense.id) {
+    try {
+      const payload: UpdateExpensePayload = {
+        category: updatedExpense.category,
+        paymentMethod: updatedExpense.paymentMethod,
+        card: updatedExpense.card,
+        installments: updatedExpense.installments,
+        value: updatedExpense.value,
+      };
+      await expensesStore.updateExpense(updatedExpense.id, payload);
+      alert("Gasto atualizado com sucesso!");
+      window.location.reload();
+    } catch (error) {
+      console.error("Erro ao editar despesa:", error);
+      alert("Erro ao editar despesa. Verifique o console.");
+    } finally {
+      editingExpense.value = null;
+      editDialog.value = false;
+    }
   }
 }
 
-// Excluir
 const deleteDialog = ref(false);
 const expenseIdToDelete = ref<string | null>(null);
 
@@ -152,14 +159,19 @@ function cancelDelete() {
   expenseIdToDelete.value = null;
 }
 
-function confirmDelete() {
+async function confirmDelete() {
   if (expenseIdToDelete.value) {
-    emit("delete", expenseIdToDelete.value);
+    try {
+      await expensesStore.deleteExpense(expenseIdToDelete.value);
+      alert("Gasto excluído com sucesso!");
+    } catch (error) {
+      console.error("Erro ao excluir despesa:", error);
+      alert("Erro ao excluir despesa. Verifique o console.");
+    }
   }
   cancelDelete();
 }
 
-// Helpers
 const theme = useTheme();
 
 const themeColors = computed(() => ({
@@ -172,8 +184,9 @@ const themeColors = computed(() => ({
 
 function formatDate(dateStr: string) {
   try {
-    return format(new Date(dateStr), "dd MMM yyyy", { locale: ptBR });
-  } catch {
+    return format(parseISO(dateStr), "dd MMM yyyy", { locale: ptBR });
+  } catch (e) {
+    console.error("Erro ao formatar data:", dateStr, e);
     return dateStr;
   }
 }
@@ -196,20 +209,20 @@ function getCategoryIcon(category: string) {
 }
 
 function amountColor(amount: number) {
-  return amount > 0 ? themeColors.error : themeColors.success;
+  return amount > 0 ? themeColors.value.error : themeColors.value.success;
 }
 
-// Agrupamento e ordenação
 const groupedExpenses = computed(() => {
-  const groups: Record<string, typeof props.expenses> = {};
+  const groups: Record<string, Expense[]> = {};
 
-  props.expenses.forEach((expense) => {
-    const date = parseISO(expense.date);
-    const key = format(date, "yyyy-MM");
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(expense);
-  });
-
+  if (expenses.value) {
+    expenses.value.forEach((expense: Expense) => {
+      const date = parseISO(expense.date);
+      const key = format(date, "yyyy-MM");
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(expense);
+    });
+  }
   return groups;
 });
 
@@ -218,13 +231,16 @@ const orderedGroupedExpenses = computed(() => {
     a < b ? 1 : -1
   );
 
-  const result: Record<string, typeof props.expenses> = {};
+  const result: Record<string, Expense[]> = {};
   sortedKeys.forEach((key) => {
     const label = format(parseISO(`${key}-01`), "MMMM yyyy", { locale: ptBR });
     result[label] = groupedExpenses.value[key];
   });
-
   return result;
+});
+
+onMounted(() => {
+  expensesStore.fetchExpenses();
 });
 </script>
 

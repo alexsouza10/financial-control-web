@@ -9,10 +9,10 @@
             <v-text-field
               v-model="category"
               label="Categoria"
-              outlined
-              dense
+              variant="outlined"
+              density="comfortable"
               clearable
-              :rules="[(v) => !!v || 'Categoria é obrigatória']"
+              :rules="[rules.required]"
               required
             />
           </v-col>
@@ -22,11 +22,10 @@
               v-model.number="amount"
               label="Valor Total (R$)"
               type="number"
-              min="0.01"
-              outlined
-              dense
+              variant="outlined"
+              density="comfortable"
               clearable
-              :rules="[(v) => v > 0 || 'Valor deve ser positivo']"
+              :rules="[rules.required, rules.positiveAmount]"
               required
             />
           </v-col>
@@ -36,10 +35,10 @@
               v-model="paymentMethod"
               :items="paymentMethods"
               label="Método de Pagamento"
-              outlined
-              dense
+              variant="outlined"
+              density="comfortable"
               clearable
-              :rules="[(v) => !!v || 'Escolha um método']"
+              :rules="[rules.required]"
               required
             />
           </v-col>
@@ -49,11 +48,10 @@
               v-model.number="installments"
               label="Quantidade de Parcelas"
               type="number"
-              min="1"
-              outlined
-              dense
+              variant="outlined"
+              density="comfortable"
               clearable
-              :rules="[(v) => v >= 1 || 'Deve ter ao menos 1 parcela']"
+              :rules="[rules.required, rules.minOneInstallment]"
               required
             />
           </v-col>
@@ -63,10 +61,10 @@
               v-model="card"
               :items="cards"
               label="Cartão"
-              outlined
-              dense
+              variant="outlined"
+              density="comfortable"
               clearable
-              :rules="[(v) => !!v || 'Selecione um cartão']"
+              :rules="[rules.required]"
               required
             />
           </v-col>
@@ -82,33 +80,36 @@
       </v-form>
     </v-card-text>
   </v-card>
+
+  <v-snackbar
+    v-model="snackbar.show"
+    :color="snackbar.color"
+    :timeout="snackbar.timeout"
+  >
+    {{ snackbar.message }}
+    <template #actions>
+      <v-btn text @click="snackbar.show = false"> Fechar </v-btn>
+    </template>
+  </v-snackbar>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
 import DatePickerField from "~/components/atoms/DatePickerField.vue";
-import { formatDate } from "~/utils/expenseUtils";
+import { useExpensesStore } from '~/stores/expenses';
+import type { VForm } from 'vuetify/components'; 
+import { AxiosError } from "axios"; 
 
-const emit = defineEmits<{
-  (
-    e: "add",
-    expense: {
-      category: string;
-      amount: number;
-      paymentMethod: string;
-      installments: number;
-      card: string;
-      date: string;
-    }
-  ): void;
-}>();
+const expensesStore = useExpensesStore();
+
+const formRef = ref<VForm | null>(null);
 
 const category = ref("");
 const amount = ref(0);
 const paymentMethod = ref("");
 const installments = ref(1);
 const card = ref("");
-const date = ref(formatDate(new Date()));
+const date = ref(new Date().toISOString().split('T')[0]);
 
 const paymentMethods = [
   "Cartão de Crédito",
@@ -118,34 +119,72 @@ const paymentMethods = [
   "Boleto",
 ];
 
-const cards = ["Nubank", "Banco Inter", "Santander", "Bradesco", "Itaú"];
+const cards = ["Nubank", "Banco Inter", "Santander", "Bradesco", "Itaú"]; // Idealmente, carregue isso do backend ou defina globalmente
 
-const submitForm = () => {
-  if (
-    !category.value ||
-    amount.value <= 0 ||
-    !paymentMethod.value ||
-    installments.value < 1 ||
-    !card.value
-  ) {
-    alert("Por favor, preencha todos os campos corretamente.");
+const snackbar = ref({
+  show: false,
+  message: '',
+  color: '',
+  timeout: 3000,
+});
+
+const rules = {
+  required: (v: string | number | null | undefined) => !!v || 'Campo obrigatório',
+  positiveAmount: (v: number) => v > 0 || 'Valor deve ser positivo',
+  minOneInstallment: (v: number) => v >= 1 || 'Deve ter ao menos 1 parcela',
+};
+
+const submitForm = async () => {
+  const { valid } = await formRef.value!.validate();
+
+  if (!valid) {
+    snackbar.value = {
+      show: true,
+      message: 'Por favor, preencha todos os campos corretamente.',
+      color: 'warning',
+      timeout: 3000,
+    };
     return;
   }
 
-  emit("add", {
-    category: category.value,
-    amount: amount.value,
-    paymentMethod: paymentMethod.value,
-    installments: installments.value,
-    card: card.value,
-    date: date.value,
-  });
+  try {
+    await expensesStore.addExpense({
+      category: category.value,
+      value: amount.value,
+      paymentMethod: paymentMethod.value,
+      installments: installments.value,
+      card: card.value,
+      date: `${date.value}T00:00:00.000Z`,
+    });
 
-  category.value = "";
-  amount.value = 0;
-  paymentMethod.value = "";
-  installments.value = 1;
-  card.value = "";
-  date.value = formatDate(new Date());
+    formRef.value?.reset();
+    date.value = new Date().toISOString().split('T')[0];
+
+    snackbar.value = {
+      show: true,
+      message: 'Gasto adicionado com sucesso!',
+      color: 'success',
+      timeout: 3000,
+    };
+  } catch (error: unknown) { 
+    let errorMessage = 'Erro ao adicionar despesa. Verifique o console.';
+    if (error instanceof AxiosError) {
+      console.error("Erro Axios ao adicionar despesa:", error.response?.data || error.message);
+      if (error.response?.data?.message) {
+        errorMessage = `Erro: ${error.response.data.message}`; 
+      } else if (error.response?.status) {
+        errorMessage = `Erro ${error.response.status}: ${error.message}`; 
+      }
+    } else {
+      console.error("Erro inesperado ao adicionar despesa:", error);
+    }
+
+    snackbar.value = {
+      show: true,
+      message: errorMessage,
+      color: 'error',
+      timeout: 5000,
+    };
+  }
 };
 </script>

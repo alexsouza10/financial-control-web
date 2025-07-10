@@ -14,10 +14,11 @@ import { useExpensesStore } from "~/stores/expenses";
 import ExpenseSummary from "~/components/organisms/ExpenseSummary.vue";
 import ExpenseForm from "~/components/molecules/ExpenseForm.vue";
 import ExpenseList from "~/components/organisms/ExpenseList.vue";
+import { CreateExpensePayload } from "~/types/expense";
 
 const store = useExpensesStore();
 
-function addExpense(expense) {
+function addExpense(expense: CreateExpensePayload) {
   store.addExpense(expense);
 }
 

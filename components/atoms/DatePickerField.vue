@@ -1,63 +1,78 @@
 <template>
-  <v-menu
-    v-model="menu"
-    :close-on-content-click="false"
-    transition="scale-transition"
-    offset-y
-    min-width="auto"
+  <v-text-field
+    :model-value="formattedDate"
+    :label="label"
+    type="date"
+    variant="outlined"
+    density="comfortable"
+    readonly
+    @click="menu = true"
+    v-bind="$attrs"
   >
-    <template v-slot:activator="{ props }">
-      <v-text-field
-        :model-value="displayDate"
-        :label="label"
-        prepend-icon="mdi-calendar"
-        readonly
-        v-bind="props"
-        outlined
-        dense
-      />
+    <template #append-inner>
+      <v-icon @click="menu = true">mdi-calendar</v-icon>
     </template>
-    <v-date-picker
-      v-model="selectedDate"
-      @update:model-value="onDateSelected"
-      no-title
-      scrollable
-    />
+  </v-text-field>
+
+  <v-menu v-model="menu" :close-on-content-click="false" location="bottom">
+    <template #activator="{ props: menuProps }">
+      <v-text-field
+        v-bind="{ ...$attrs, ...menuProps }"
+        :model-value="formattedDate"
+        :label="label"
+        type="date"
+        variant="outlined"
+        density="comfortable"
+        readonly
+        @click="menu = true"
+        class="d-none"
+      ></v-text-field>
+    </template>
+    <v-date-picker v-model="internalDate" @update:model-value="selectDate" />
   </v-menu>
 </template>
 
-
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { format } from 'date-fns'
+import { ref, watch, computed } from 'vue';
+import { format, parseISO } from 'date-fns';
 
 const props = defineProps<{
-  modelValue: string | null
-  label: string
-}>()
+  modelValue: string; 
+  label?: string;
+}>();
 
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: string | null): void
-}>()
+const emit = defineEmits(['update:modelValue']);
 
-const menu = ref(false)
+const menu = ref(false); 
+const internalDate = ref<Date | null>(null); 
 
-// Computed para data formatada no input
-const displayDate = computed(() => {
-  if (!props.modelValue) return ''
-  try {
-    return format(new Date(props.modelValue), 'dd/MM/yyyy')
-  } catch {
-    return props.modelValue
+const formattedDate = computed(() => {
+  if (props.modelValue) {
+    try {
+      return format(parseISO(props.modelValue), 'yyyy-MM-dd');
+    } catch (e) {
+      console.error("Erro ao formatar data para DatePickerField:", props.modelValue, e);
+      return ''; 
+    }
   }
-})
+  return '';
+});
 
-const selectedDate = computed({
-  get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val),
-})
+watch(() => props.modelValue, (newVal) => {
+  if (newVal) {
+    try {
+      internalDate.value = parseISO(newVal);
+    } catch (e) {
+      console.error("Erro ao parsear modelValue para DatePickerField:", newVal, e);
+      internalDate.value = null;
+    }
+  } else {
+    internalDate.value = null;
+  }
+}, { immediate: true }); 
 
-const onDateSelected = () => {
-  menu.value = false
+function selectDate(date: Date) {
+  emit('update:modelValue', format(date, 'yyyy-MM-dd'));
+  menu.value = false; // Fecha o menu do calendário
 }
 </script>

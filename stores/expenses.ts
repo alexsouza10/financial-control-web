@@ -1,81 +1,138 @@
-import { defineStore } from "pinia";
-
-export interface Expense {
-  id: string;
-  description: string;
-  amount: number;
-  date: string;
-}
+import { defineStore } from 'pinia';
+import { useNuxtApp } from '#app';
+import { Expense, Salary, CreateExpensePayload, UpdateExpensePayload } from '~/types/expense';
 
 interface ExpensesState {
   expenses: Expense[];
   salary: number;
+  loading: boolean;
+  error: string | null;
+  categories: string[];
 }
 
-export const useExpensesStore = defineStore("expenses", {
+export const useExpensesStore = defineStore('expenses', {
   state: (): ExpensesState => ({
     expenses: [],
-    salary: 3000, // valor inicial padrão
+    salary: 0,
+    loading: false,
+    error: null,
+    categories: [],
   }),
 
-  actions: {
-    addExpense(expense: Omit<Expense, "id">) {
-      const newExpense: Expense = {
-        id: crypto.randomUUID(),
-        ...expense,
-      };
-      this.expenses.push(newExpense);
-      this.saveExpenses();
-    },
+  getters: {
+    totalExpenses: (state: ExpensesState): number =>
+      state.expenses.reduce((sum: number, expense: Expense) => sum + expense.value, 0),
 
-    removeExpense(id: string) {
-      this.expenses = this.expenses.filter((expense) => expense.id !== id);
-      this.saveExpenses();
-    },
-
-    async fetchExpenses() {
-      const storedData = localStorage.getItem("finance-data");
-      if (storedData) {
-        const parsed = JSON.parse(storedData);
-        this.expenses = parsed.expenses || [];
-        this.salary = parsed.salary ?? 3000;
-      }
-    },
-
-    saveExpenses() {
-      const data = {
-        expenses: this.expenses,
-        salary: this.salary,
-      };
-      localStorage.setItem("finance-data", JSON.stringify(data));
-    },
-
-    setSalary(newSalary: number) {
-      this.salary = newSalary;
-      this.saveExpenses();
+    averageExpense(): number {
+      return this.expenses.length > 0 ? this.totalExpenses / this.expenses.length : 0;
     },
   },
 
-  getters: {
-    totalExpenses(state): number {
-      return state.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  actions: {
+    async fetchExpenses() {
+      const { $api } = useNuxtApp();
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await $api.get<Expense[]>('/Expenses');
+        this.expenses = response.data;
+        this.categories = [...new Set(response.data.map((exp: Expense) => exp.category))];
+      } catch (err: any) {
+        this.error = 'Failed to fetch expenses: ' + (err.response?.data || err.message);
+        console.error(this.error, err);
+      } finally {
+        this.loading = false;
+      }
     },
 
-    averageExpense(): number {
-      if (this.expenses.length === 0) return 0;
-      return this.totalExpenses / this.expenses.length;
-    },
-
-    expensesByMonth(state) {
-      const grouped: { [key: string]: Expense[] } = {};
-      state.expenses.forEach((expense) => {
-        const monthYear = expense.date.substring(0, 7);
-        if (!grouped[monthYear]) {
-          grouped[monthYear] = [];
+    async addExpense(expensePayload: CreateExpensePayload) {
+      const { $api } = useNuxtApp();
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await $api.post<Expense>('/Expenses', expensePayload);
+        this.expenses.push(response.data);
+        if (!this.categories.includes(response.data.category)) {
+          this.categories.push(response.data.category);
         }
-        grouped[monthYear].push(expense);
-      });
-      return grouped;
+      } catch (err: any) {
+        this.error = 'Failed to add expense: ' + (err.response?.data || err.message);
+        console.error(this.error, err);
+        throw err;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async updateExpense(id: string, payload: UpdateExpensePayload) {
+      const { $api } = useNuxtApp();
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await $api.put<Expense>(`/Expenses/${id}`, payload);
+        const index = this.expenses.findIndex(exp => exp.id === id);
+        if (index !== -1) {
+          this.expenses[index] = response.data;
+        }
+      } catch (err: any) {
+        this.error = 'Failed to update expense: ' + (err.response?.data || err.message);
+        console.error(this.error, err);
+        throw err;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async deleteExpense(id: string) {
+      const { $api } = useNuxtApp();
+      this.loading = true;
+      this.error = null;
+      try {
+        await $api.delete(`/Expenses/${id}`);
+        this.expenses = this.expenses.filter(exp => exp.id !== id);
+      } catch (err: any) {
+        this.error = 'Failed to delete expense: ' + (err.response?.data || err.message);
+        console.error(this.error, err);
+        throw err;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async fetchSalary() {
+        const { $api } = useNuxtApp();
+        this.loading = true;
+        this.error = null;
+        try {
+            const response = await $api.get<Salary[]>('/Salaries');
+            if (response.data && response.data.length > 0) {
+              this.salary = response.data[0].value;
+            } else {
+              this.salary = 0;
+            }
+        } catch (err: any) {
+            this.error = 'Failed to fetch salary: ' + (err.response?.data || err.message);
+            console.error(this.error, err);
+        } finally {
+            this.loading = false;
+        }
+    },
+
+    async setSalary(newValue: number) {
+      const { $api } = useNuxtApp();
+      this.loading = true;
+      this.error = null;
+      try {
+          const salaryPayload = { value: newValue, date: new Date().toISOString() };
+          const response = await $api.post<Salary>('/Salaries', salaryPayload);
+          this.salary = response.data.value;
+      } catch (err: any) {
+          this.error = 'Failed to update salary: ' + (err.response?.data || err.message);
+          console.error(this.error, err);
+          throw err;
+      } finally {
+          this.loading = false;
+      }
     },
   },
 });
