@@ -1,6 +1,6 @@
 <template>
   <v-row class="mb-6" justify="center" align="center" dense>
-    <v-col cols="12" md="4">
+    <v-col cols="12" sm="6">
       <ExpenseCard
         icon="mdi-cash-multiple"
         title="Total"
@@ -9,7 +9,7 @@
       />
     </v-col>
 
-    <v-col cols="12" md="4">
+    <v-col cols="12" sm="6">
       <ExpenseCard
         icon="mdi-calculator"
         title="Média"
@@ -18,7 +18,7 @@
       />
     </v-col>
 
-    <v-col cols="12" md="4">
+    <v-col cols="12" sm="6">
       <ExpenseCard
         icon="mdi-wallet"
         title="Salário"
@@ -29,10 +29,8 @@
         @edit-click="openDialog"
       />
     </v-col>
-  </v-row>
 
-  <v-row justify="center" align="center" dense class="mb-6">
-    <v-col cols="12" md="4">
+    <v-col cols="12" sm="6">
       <ExpenseCard
         icon="mdi-cash-check"
         title="Sobra"
@@ -45,6 +43,7 @@
   <EditNumberDialog
     v-model="dialog"
     :value="store.salary"
+    :expense="null"
     title="Editar Salário"
     label="Novo salário"
     :min="0"
@@ -55,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useExpensesStore } from "~/stores/expenses";
 import ExpenseCard from "../molecules/ExpenseCard.vue";
 import EditNumberDialog from "../dialogs/EditNumberDialog.vue";
@@ -75,4 +74,8 @@ function updateSalary(newValue: number) {
   }
   dialog.value = false;
 }
+
+onMounted(() => {
+  store.fetchSalary();
+});
 </script>

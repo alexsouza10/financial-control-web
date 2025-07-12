@@ -48,7 +48,8 @@
 
   <EditNumberDialog
     v-model="dialog"
-    :value="expensesStore.salary"
+    :value="store.salary"
+    :expense="null"
     title="Editar Salário"
     label="Novo salário"
     :min="0"
@@ -59,29 +60,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue"; 
+import { ref, computed, onMounted } from "vue";
 import { useExpensesStore } from "~/stores/expenses";
 import ExpenseCard from "../molecules/ExpenseCard.vue";
 import EditNumberDialog from "../dialogs/EditNumberDialog.vue";
 
-const expensesStore = useExpensesStore(); 
+const expensesStore = useExpensesStore();
 const dialog = ref(false);
 
-const restante = computed(() => expensesStore.salary - expensesStore.totalExpenses);
+const restante = computed(
+  () => expensesStore.salary - expensesStore.totalExpenses
+);
 
 function openDialog() {
   dialog.value = true;
 }
 
-async function updateSalary(newValue: number) { 
+function updateSalary(newValue: number) {
   if (newValue >= 0) {
-    try {
-      await expensesStore.setSalary(newValue); 
-      alert('Salário atualizado com sucesso!');
-    } catch (error) {
-      console.error("Erro ao atualizar salário:", error);
-      alert('Erro ao atualizar salário. Verifique o console.');
-    }
+    store.setSalary(newValue);
   }
   dialog.value = false;
 }

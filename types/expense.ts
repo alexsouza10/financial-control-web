@@ -2,11 +2,10 @@ export interface Expense {
   id: string;
   category: string;
   value: number;
-  date: string; // ISO string
+  date: string;
   paymentMethod: string;
   card: string;
   installments: number;
-  // ... outros campos se houver
 }
 
 export interface CreateExpensePayload {
