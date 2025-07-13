@@ -1,29 +1,32 @@
 export interface Expense {
   id: string;
-  category: string;
+  categoryId: string;
   value: number;
   date: string;
   paymentMethod: string;
   card: string;
   installments: number;
+  description: string;
 }
 
 export interface CreateExpensePayload {
-  category: string;
+  categoryId: string;
   value: number;
   date: string;
   paymentMethod: string;
   card: string;
   installments: number;
+  description: string;
 }
 
 export interface UpdateExpensePayload {
-  category?: string;
+  categoryId?: string;
   value?: number;
   date?: string;
   paymentMethod?: string;
   card?: string;
   installments?: number;
+  description?: string;
 }
 
 export interface Salary {

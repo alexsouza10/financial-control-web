@@ -19,7 +19,7 @@ import ExpenseRegisterCard from "~/components/organisms/ExpenseRegisterCard.vue"
 import ExpenseList from "~/components/organisms/ExpenseList.vue";
 import DeleteDialog from "~/components/dialogs/DeleteDialog.vue";
 import BaseSnackbar from "~/components/atoms/BaseSnackbar.vue";
-import { useExpensesStore } from "~/stores/expenses";
+import { useExpensesStore } from "~/stores/useExpensesStore";
 
 const store = useExpensesStore();
 

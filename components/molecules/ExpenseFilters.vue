@@ -31,7 +31,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import DatePickerField from '~/components/atoms/DatePickerField.vue'
-import { useExpensesStore } from '~/stores/expenses'; 
+import { useExpensesStore } from '~/stores/useExpensesStore'; 
 const props = defineProps<{
   startDate: string | null
   endDate: string | null

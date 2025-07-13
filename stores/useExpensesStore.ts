@@ -12,7 +12,6 @@ interface ExpensesState {
   salary: number;
   loading: boolean;
   error: string | null;
-  categories: string[];
 }
 
 export const useExpensesStore = defineStore("expenses", {
@@ -21,7 +20,6 @@ export const useExpensesStore = defineStore("expenses", {
     salary: 0,
     loading: false,
     error: null,
-    categories: [],
   }),
 
   getters: {
@@ -46,9 +44,6 @@ export const useExpensesStore = defineStore("expenses", {
       try {
         const response = await $api.get<Expense[]>("/Expenses");
         this.expenses = response.data;
-        this.categories = [
-          ...new Set(response.data.map((exp: Expense) => exp.category)),
-        ];
       } catch (err: any) {
         this.error =
           "Failed to fetch expenses: " + (err.response?.data || err.message);
@@ -65,9 +60,6 @@ export const useExpensesStore = defineStore("expenses", {
       try {
         const response = await $api.post<Expense>("/Expenses", expensePayload);
         this.expenses.push(response.data);
-        if (!this.categories.includes(response.data.category)) {
-          this.categories.push(response.data.category);
-        }
       } catch (err: any) {
         this.error =
           "Failed to add expense: " + (err.response?.data || err.message);
