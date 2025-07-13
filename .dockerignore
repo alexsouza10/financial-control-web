@@ -1,0 +1,8 @@
+node_modules/
+.nuxt/
+.output/
+dist/
+npm-debug.log
+yarn-error.log
+.env
+.vercel/

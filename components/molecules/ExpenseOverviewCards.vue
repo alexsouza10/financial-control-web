@@ -1,41 +1,47 @@
 <template>
   <v-row class="mb-6" justify="center" align="center" dense>
-    <v-col cols="12" sm="6">
+    <v-col cols="12" md="4">
       <ExpenseCard
         icon="mdi-cash-multiple"
-        title="Total"
-        :value="store.totalExpenses"
+        title="Total Gasto"
+        :value="expensesStore.totalExpenses"
         color="green darken-2"
+        custom-class="bg-green-lighten-5"
       />
     </v-col>
 
-    <v-col cols="12" sm="6">
+    <v-col cols="12" md="4">
       <ExpenseCard
         icon="mdi-calculator"
-        title="Média"
-        :value="store.averageExpense"
+        title="Média Gasto"
+        :value="expensesStore.averageExpense"
         color="blue darken-2"
+        custom-class="bg-blue-lighten-5"
       />
     </v-col>
 
-    <v-col cols="12" sm="6">
+    <v-col cols="12" md="4">
       <ExpenseCard
         icon="mdi-wallet"
         title="Salário"
-        :value="store.salary"
+        :value="expensesStore.salary"
         color="orange darken-2"
         edit-icon="mdi-pencil"
         edit-title="Editar salário"
         @edit-click="openDialog"
+        custom-class="bg-orange-lighten-5"
       />
     </v-col>
+  </v-row>
 
-    <v-col cols="12" sm="6">
+  <v-row justify="center" align="center" dense class="mb-6">
+    <v-col cols="12" md="4">
       <ExpenseCard
         icon="mdi-cash-check"
         title="Sobra"
         :value="restante"
         color="teal darken-2"
+        custom-class="bg-teal-lighten-5"
       />
     </v-col>
   </v-row>
@@ -59,10 +65,12 @@ import { useExpensesStore } from "~/stores/expenses";
 import ExpenseCard from "../molecules/ExpenseCard.vue";
 import EditNumberDialog from "../dialogs/EditNumberDialog.vue";
 
-const store = useExpensesStore();
+const expensesStore = useExpensesStore();
 const dialog = ref(false);
 
-const restante = computed(() => store.salary - store.totalExpenses);
+const restante = computed(
+  () => expensesStore.salary - expensesStore.totalExpenses
+);
 
 function openDialog() {
   dialog.value = true;
@@ -76,6 +84,6 @@ function updateSalary(newValue: number) {
 }
 
 onMounted(() => {
-  store.fetchSalary();
+  expensesStore.fetchSalary();
 });
 </script>

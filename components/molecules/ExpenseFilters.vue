@@ -29,35 +29,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import DatePickerField from '~/components/atoms/DatePickerField.vue'
-
+import { useExpensesStore } from '~/stores/expenses'; 
 const props = defineProps<{
   startDate: string | null
   endDate: string | null
   selectedCategory: string | null
-  categories: string[]
 }>()
 
 const emit = defineEmits([
   'update:startDate',
   'update:endDate',
   'update:selectedCategory',
+  'apply-filters', 
 ])
 
-// Variáveis locais reativas para permitir v-model
+const expensesStore = useExpensesStore(); 
+const categories = computed(() => expensesStore.categories); 
 const startDateLocal = ref(props.startDate)
 const endDateLocal = ref(props.endDate)
 
-// Atualiza o prop quando ele mudar externamente
 watch(() => props.startDate, (val) => startDateLocal.value = val)
 watch(() => props.endDate, (val) => endDateLocal.value = val)
 
-// Emite as mudanças para o componente pai
-watch(startDateLocal, (val) => emit('update:startDate', val))
-watch(endDateLocal, (val) => emit('update:endDate', val))
+watch(startDateLocal, (val) => {
+  emit('update:startDate', val);
+  emit('apply-filters');
+})
+watch(endDateLocal, (val) => {
+  emit('update:endDate', val);
+  emit('apply-filters');
+})
 
 const onCategoryChange = (val: string | null) => {
-  emit('update:selectedCategory', val === 'All' ? null : val)
+  emit('update:selectedCategory', val === 'All' ? null : val);
+  emit('apply-filters');
 }
 </script>
