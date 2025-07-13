@@ -8,13 +8,18 @@
           <v-col cols="12" md="6">
             <v-select
               v-model="editedExpense.category"
-              :items="categories"
+              :items="categoriesStore.categories"
+              item-title="name"
+              item-value="id"
               label="Categoria"
               variant="outlined"
               density="comfortable"
               hide-details="auto"
               class="mb-4"
               required
+              :rules="[rules.required]"
+              :loading="categoriesStore.loading"
+              :disabled="categoriesStore.loading"
             />
           </v-col>
 
@@ -78,7 +83,10 @@
             />
           </v-col>
 
-          <v-col cols="12" md="6">
+          <v-col
+            cols="12"
+            :md="editedExpense.paymentMethod === 'Cartão de Crédito' ? 6 : 12"
+          >
             <DatePickerField
               v-model="editedExpense.date"
               label="Data"
@@ -107,15 +115,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, onMounted } from "vue";
 import DatePickerField from "~/components/atoms/DatePickerField.vue";
-import { useExpensesStore } from "~/stores/expenses";
+import { useExpensesStore } from "~/stores/useExpensesStore";
+import { useCategoriesStore } from "#imports";
 import type { VForm } from "vuetify/components";
 import { AxiosError } from "axios";
 import type { Expense } from "~/types/expense";
 import { addMonths, parseISO, format } from "date-fns";
 
 const expensesStore = useExpensesStore();
+const categoriesStore = useCategoriesStore();
 
 const formRef = ref<VForm | null>(null);
 
@@ -125,17 +135,8 @@ const editedExpense = ref<Expense>({
   paymentMethod: "",
   installments: 1,
   card: "",
-  date: new Date().toISOString().split("T")[0],
+  date: new Date().toISOString(),
 } as Expense);
-
-const categories = [
-  "Alimentação",
-  "Transporte",
-  "Saúde",
-  "Lazer",
-  "Contas",
-  "Outros",
-];
 
 const paymentMethods = [
   "Cartão de Crédito",
@@ -156,7 +157,7 @@ const snackbar = ref({
 
 const rules = {
   required: (v: string | number | null | undefined) =>
-    !!v || "Campo obrigatório",
+    (v !== null && v !== undefined && v !== "") || "Campo obrigatório",
   positiveAmount: (v: number) => v > 0 || "Valor deve ser positivo",
   minOneInstallment: (v: number) => v >= 1 || "Deve ter ao menos 1 parcela",
 };
@@ -188,21 +189,29 @@ const submitForm = async () => {
   try {
     const totalValue = editedExpense.value.value;
     const installmentsCount = editedExpense.value.installments;
-    const initialDate = parseISO(editedExpense.value.date);
+    let initialDate = parseISO(editedExpense.value.date);
 
     const expensesToRegister: Expense[] = [];
     const installmentValue = totalValue / installmentsCount;
 
     for (let i = 0; i < installmentsCount; i++) {
       const currentInstallmentDate = addMonths(initialDate, i);
-      const formattedDate = format(currentInstallmentDate, "yyyy-MM-dd");
+      const formattedDateForBackend = `${format(
+        currentInstallmentDate,
+        "yyyy-MM-dd"
+      )}T00:00:00.000Z`;
 
-      expensesToRegister.push({
-        ...editedExpense.value,
+      const expensePayload: Expense = {
+        category: editedExpense.value.category,
         value: installmentValue,
+        paymentMethod: editedExpense.value.paymentMethod,
         installments: 1,
-        date: `${formattedDate}T00:00:00.000Z`,
-      });
+        card: editedExpense.value.card,
+        date: formattedDateForBackend,
+        categoryId: editedExpense.value.category,
+      };
+
+      expensesToRegister.push(expensePayload);
     }
 
     console.log("Despesas a serem registradas:", expensesToRegister);
@@ -218,7 +227,7 @@ const submitForm = async () => {
       paymentMethod: "",
       installments: 1,
       card: "",
-      date: new Date().toISOString().split("T")[0],
+      date: new Date().toISOString(),
     } as Expense;
 
     snackbar.value = {
@@ -254,6 +263,12 @@ const submitForm = async () => {
     };
   }
 };
+
+onMounted(() => {
+  categoriesStore.fetchAllCategories();
+});
 </script>
 
-<style scoped></style>
+<style scoped>
+/* Ensure this section is empty or contains only valid CSS */
+</style>

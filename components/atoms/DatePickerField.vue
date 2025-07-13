@@ -33,46 +33,58 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
-import { format, parseISO } from 'date-fns';
+import { ref, watch, computed } from "vue";
+import { format, parseISO } from "date-fns";
 
 const props = defineProps<{
-  modelValue: string; 
+  modelValue: string;
   label?: string;
 }>();
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(["update:modelValue"]);
 
-const menu = ref(false); 
-const internalDate = ref<Date | null>(null); 
+const menu = ref(false);
+const internalDate = ref<Date | null>(null);
 
 const formattedDate = computed(() => {
   if (props.modelValue) {
     try {
-      return format(parseISO(props.modelValue), 'yyyy-MM-dd');
+      return format(parseISO(props.modelValue), "yyyy-MM-dd");
     } catch (e) {
-      console.error("Erro ao formatar data para DatePickerField:", props.modelValue, e);
-      return ''; 
+      console.error(
+        "Erro ao formatar data para DatePickerField:",
+        props.modelValue,
+        e
+      );
+      return "";
     }
   }
-  return '';
+  return "";
 });
 
-watch(() => props.modelValue, (newVal) => {
-  if (newVal) {
-    try {
-      internalDate.value = parseISO(newVal);
-    } catch (e) {
-      console.error("Erro ao parsear modelValue para DatePickerField:", newVal, e);
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (newVal) {
+      try {
+        internalDate.value = parseISO(newVal);
+      } catch (e) {
+        console.error(
+          "Erro ao parsear modelValue para DatePickerField:",
+          newVal,
+          e
+        );
+        internalDate.value = null;
+      }
+    } else {
       internalDate.value = null;
     }
-  } else {
-    internalDate.value = null;
-  }
-}, { immediate: true }); 
+  },
+  { immediate: true }
+);
 
 function selectDate(date: Date) {
-  emit('update:modelValue', format(date, 'yyyy-MM-dd'));
-  menu.value = false; // Fecha o menu do calendário
+  emit("update:modelValue", format(date, "yyyy-MM-dd"));
+  menu.value = false; 
 }
 </script>

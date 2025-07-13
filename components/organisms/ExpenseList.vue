@@ -1,73 +1,78 @@
 <template>
-  <v-expansion-panels multiple>
+  <v-expansion-panels multiple class="expense-panel-wrapper">
     <v-expansion-panel
       v-for="(expensesInMonth, month) in orderedGroupedExpenses"
       :key="month"
+      elevation="2"
+      rounded="lg"
+      class="mb-4"
     >
-      <v-expansion-panel-title>
+      <v-expansion-panel-title class="font-weight-bold text-h6 text-primary">
         {{ month.charAt(0).toUpperCase() + month.slice(1) }}
       </v-expansion-panel-title>
       <v-expansion-panel-text>
-        <v-list density="compact" class="expense-list">
+        <v-list class="expense-list-items">
           <v-list-item
             v-for="expense in expensesInMonth"
             :key="expense.id"
-            class="expense-item"
-            rounded
-            elevation="2"
-            :style="{ backgroundColor: themeColors.surface }"
+            class="expense-item-card"
+            rounded="lg"
+            elevation="1"
           >
+            {{ console.log("Current Expense Object:", expense) }}
+
             <template #prepend>
-              <v-avatar
-                :color="themeColors.primary"
-                class="white--text"
-                size="40"
-              >
-                <v-icon size="28">{{
-                  getCategoryIcon(expense.category)
+              <v-avatar :color="getCategoryColor(expense.categoryId)" size="48">
+                <v-icon size="32">{{
+                  getCategoryIcon(expense.categoryId)
                 }}</v-icon>
               </v-avatar>
             </template>
 
             <v-list-item-content>
-              <v-list-item-title class="text-body-1 font-semibold">
-                {{ expense.category }}
+              <v-list-item-title class="font-weight-bold text-subtitle-1">
+                {{ getCategoryName(expense.categoryId) }}
               </v-list-item-title>
-              <v-list-item-subtitle class="text-body-small text-secondary">
-                {{ formatDate(expense.date) }} • {{ expense.paymentMethod }} •
-                Cartão: {{ expense.card }}
+              <v-list-item-subtitle class="text-body-2 text-medium-emphasis">
+                {{ expense.description }}
               </v-list-item-subtitle>
-              <v-list-item-subtitle class="text-body-small text-secondary">
-                Parcelas: {{ expense.installments }}x
+              <v-list-item-subtitle class="text-caption text-disabled mt-1">
+                {{ formatDate(expense.date) }} • {{ expense.paymentMethod }}
+                <template v-if="expense.paymentMethod === 'Cartão de Crédito'">
+                  • {{ expense.card }} • Parcelas: {{ expense.installments }}x
+                </template>
               </v-list-item-subtitle>
             </v-list-item-content>
 
             <template #append>
-              <div
-                :style="{
-                  color: amountColor(expense.value),
-                  fontWeight: '700',
-                  fontSize: '1.25rem',
-                }"
-              >
-                R$ {{ expense.value.toFixed(2) }}
+              <div class="d-flex flex-column align-end">
+                <span
+                  class="font-weight-bold text-h6"
+                  :style="{ color: amountColor(expense.value) }"
+                >
+                  R$ {{ expense.value.toFixed(2) }}
+                </span>
+                <div class="expense-actions mt-2">
+                  <v-btn
+                    icon
+                    variant="text"
+                    color="primary"
+                    size="small"
+                    @click="openEditDialog(expense)"
+                  >
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-btn>
+                  <v-btn
+                    icon
+                    variant="text"
+                    color="error"
+                    size="small"
+                    @click="openDeleteDialog(expense.id)"
+                  >
+                    <v-icon>mdi-delete</v-icon>
+                  </v-btn>
+                </div>
               </div>
-              <v-btn
-                icon
-                color="primary"
-                variant="text"
-                @click="openEditDialog(expense)"
-              >
-                <v-icon>mdi-pencil</v-icon>
-              </v-btn>
-              <v-btn
-                icon
-                color="error"
-                variant="text"
-                @click="openDeleteDialog(expense.id)"
-              >
-                <v-icon>mdi-delete</v-icon>
-              </v-btn>
             </template>
           </v-list-item>
         </v-list>
@@ -82,18 +87,36 @@
     @update:expense="handleExpenseUpdate"
   />
 
-  <v-dialog v-model="deleteDialog" max-width="400" persistent>
-    <v-card>
-      <v-card-title class="text-h6">Confirmar Exclusão</v-card-title>
-      <v-card-text>Tem certeza que deseja excluir este gasto?</v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn color="secondary" variant="outlined" @click="cancelDelete"
-          >Cancelar</v-btn
+  <v-dialog v-model="deleteDialog" max-width="450" persistent>
+    <v-card rounded="lg">
+      <v-card-title class="text-h6 text-center text-red-darken-2 py-4">
+        <v-icon left class="mr-2">mdi-alert-circle</v-icon>
+        Confirmar Exclusão
+      </v-card-title>
+      <v-card-text class="text-center text-body-1 text-grey-darken-2 pb-6">
+        Tem certeza de que deseja excluir este gasto?
+        <br />
+        Esta ação não pode ser desfeita.
+      </v-card-text>
+      <v-card-actions class="justify-center pb-4">
+        <v-btn
+          color="grey-darken-1"
+          variant="flat"
+          @click="cancelDelete"
+          class="text-capitalize"
+          rounded
         >
-        <v-btn color="error" variant="flat" @click="confirmDelete"
-          >Excluir</v-btn
+          Cancelar
+        </v-btn>
+        <v-btn
+          color="red-darken-2"
+          variant="flat"
+          @click="confirmDelete"
+          class="text-capitalize"
+          rounded
         >
+          Excluir
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -105,10 +128,13 @@ import { useTheme } from "vuetify";
 import { parseISO, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import EditNumberDialog from "../dialogs/EditNumberDialog.vue";
-import { useExpensesStore } from "~/stores/expenses";
+import { useExpensesStore } from "~/stores/useExpensesStore";
+import { useCategoriesStore } from "#imports";
 import type { Expense, UpdateExpensePayload } from "~/types/expense";
 
 const expensesStore = useExpensesStore();
+const categoriesStore = useCategoriesStore();
+
 const expenses = computed(() => expensesStore.expenses);
 
 const editDialog = ref(false);
@@ -122,12 +148,13 @@ function openEditDialog(expense: Expense) {
 async function handleExpenseUpdate(updatedExpense: Expense) {
   try {
     const payload: UpdateExpensePayload = {
-      category: updatedExpense.category,
+      categoryId: updatedExpense.categoryId,
       paymentMethod: updatedExpense.paymentMethod,
       card: updatedExpense.card,
       installments: updatedExpense.installments,
       value: updatedExpense.value,
       date: updatedExpense.date,
+      description: updatedExpense.description,
     };
     await expensesStore.updateExpense(updatedExpense.id, payload);
     await expensesStore.fetchExpenses();
@@ -175,8 +202,34 @@ function formatDate(dateStr: string) {
   }
 }
 
-function getCategoryIcon(category: string) {
-  switch (category.toLowerCase()) {
+function getCategoryName(categoryId: string | undefined): string {
+  if (!categoryId) {
+    console.warn(
+      'getCategoryName: categoryId is undefined or null. Defaulting to "Desconhecida".'
+    );
+    return "Desconhecida";
+  }
+  const trimmedCategoryId = categoryId.trim();
+
+  const category = categoriesStore.categories.find((c) => {
+    const trimmedStoredCategoryId = c.id?.trim();
+    return trimmedStoredCategoryId === trimmedCategoryId;
+  });
+
+  if (!category) {
+    console.warn(
+      `getCategoryName: Category not found for ID: "${trimmedCategoryId}". ` +
+        `Available categories in store:`,
+      categoriesStore.categories.map((c) => ({ id: c.id, name: c.name }))
+    );
+    return "Desconhecida";
+  }
+  return category.name;
+}
+
+function getCategoryIcon(categoryId: string | undefined) {
+  const categoryName = getCategoryName(categoryId);
+  switch (categoryName.toLowerCase()) {
     case "alimentação":
       return "mdi-food";
     case "transporte":
@@ -187,19 +240,28 @@ function getCategoryIcon(category: string) {
       return "mdi-gamepad-variant";
     case "contas":
       return "mdi-cash-multiple";
+    case "carro":
+      return "mdi-car";
+    case "farmaciaaaaaaaaaaaaaaa":
+      return "mdi-medical-bag";
     default:
       return "mdi-currency-usd";
   }
 }
 
+function getCategoryColor(categoryId: string | undefined): string {
+  return themeColors.value.primary;
+}
+
 function amountColor(value: number) {
-  return value > 0 ? themeColors.value.error : themeColors.value.success;
+  return value <= 0 ? themeColors.value.success : themeColors.value.error;
 }
 
 const groupedExpenses = computed(() => {
   const groups: Record<string, Expense[]> = {};
   expenses.value.forEach((expense) => {
-    const key = format(parseISO(expense.date), "yyyy-MM");
+    const date = parseISO(expense.date);
+    const key = format(date, "yyyy-MM");
     if (!groups[key]) groups[key] = [];
     groups[key].push(expense);
   });
@@ -213,26 +275,60 @@ const orderedGroupedExpenses = computed(() => {
   const result: Record<string, Expense[]> = {};
   sortedKeys.forEach((key) => {
     const label = format(parseISO(`${key}-01`), "MMMM yyyy", { locale: ptBR });
-    result[label] = groupedExpenses.value[key];
+    result[label] = groupedExpenses.value[key].sort(
+      (a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime()
+    );
   });
   return result;
 });
 
-onMounted(() => expensesStore.fetchExpenses());
+onMounted(() => {
+  categoriesStore.fetchAllCategories().then(() => {
+    console.log("Categories loaded in store:", categoriesStore.categories);
+    expensesStore.fetchExpenses();
+  });
+});
 </script>
 
 <style scoped>
-.expense-list {
-  max-width: 800px;
-  margin: auto;
+.expense-panel-wrapper {
+  max-width: 900px;
+  margin: 20px auto;
 }
-.expense-item {
+
+.expense-list-items {
+  padding: 0;
+  background-color: transparent;
+}
+
+.expense-item-card {
   margin-bottom: 12px;
-  padding: 12px;
-  transition: box-shadow 0.25s ease;
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: all 0.2s ease-in-out;
+  background-color: rgb(var(--v-theme-surface-lighten1));
 }
-.expense-item:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-  cursor: default;
+
+.expense-item-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+}
+
+.v-list-item-content {
+  flex-grow: 1;
+  padding-right: 16px;
+}
+
+.expense-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.text-body-2 {
+  line-height: 1.4;
+}
+
+.text-caption {
+  line-height: 1.3;
 }
 </style>

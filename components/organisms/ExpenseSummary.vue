@@ -55,7 +55,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { useExpensesStore } from "~/stores/expenses";
+import { useExpensesStore } from "~/stores/useExpensesStore";
 import ExpenseCard from "../molecules/ExpenseCard.vue";
 import EditNumberDialog from "../dialogs/EditNumberDialog.vue";
 
