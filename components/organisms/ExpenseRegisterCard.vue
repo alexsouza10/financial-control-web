@@ -82,37 +82,48 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useExpensesStore } from '~/stores/expenses'
+import { ref, computed } from "vue";
+import { useExpensesStore } from "~/stores/expenses";
 
-const expensesStore = useExpensesStore()
+const expensesStore = useExpensesStore();
 
-const description = ref('')
-const totalValue = ref(0)
-const paymentMethod = ref('')
-const installments = ref(1)
+const description = ref("");
+const totalValue = ref(0);
+const paymentMethod = ref("");
+const installments = ref(1);
 
-const paymentMethods = ['Cartão de Crédito', 'Débito', 'Dinheiro', 'Pix', 'Boleto']
+const paymentMethods = [
+  "Cartão de Crédito",
+  "Débito",
+  "Dinheiro",
+  "Pix",
+  "Boleto",
+];
 
 const installmentValue = computed(() =>
   installments.value > 0 ? totalValue.value / installments.value : 0
-)
+);
 
 function addExpense() {
-  if (!description.value || !paymentMethod.value || totalValue.value <= 0 || installments.value < 1) {
-    alert('Preencha todos os campos corretamente!')
-    return
+  if (
+    !description.value ||
+    !paymentMethod.value ||
+    totalValue.value <= 0 ||
+    installments.value < 1
+  ) {
+    alert("Preencha todos os campos corretamente!");
+    return;
   }
 
   expensesStore.addExpense({
     description: `${description.value} (${paymentMethod.value} - ${installments.value}x)`,
     amount: totalValue.value,
-    date: new Date().toISOString().split('T')[0],
-  })
+    date: new Date().toISOString().split("T")[0],
+  });
 
-  description.value = ''
-  totalValue.value = 0
-  paymentMethod.value = ''
-  installments.value = 1
+  description.value = "";
+  totalValue.value = 0;
+  paymentMethod.value = "";
+  installments.value = 1;
 }
 </script>

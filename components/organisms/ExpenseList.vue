@@ -1,6 +1,9 @@
 <template>
   <v-expansion-panels multiple>
-    <v-expansion-panel v-for="(expensesInMonth, month) in orderedGroupedExpenses" :key="month">
+    <v-expansion-panel
+      v-for="(expensesInMonth, month) in orderedGroupedExpenses"
+      :key="month"
+    >
       <v-expansion-panel-title>
         {{ month.charAt(0).toUpperCase() + month.slice(1) }}
       </v-expansion-panel-title>
@@ -15,8 +18,14 @@
             :style="{ backgroundColor: themeColors.surface }"
           >
             <template #prepend>
-              <v-avatar :color="themeColors.primary" class="white--text" size="40">
-                <v-icon size="28">{{ getCategoryIcon(expense.category) }}</v-icon>
+              <v-avatar
+                :color="themeColors.primary"
+                class="white--text"
+                size="40"
+              >
+                <v-icon size="28">{{
+                  getCategoryIcon(expense.category)
+                }}</v-icon>
               </v-avatar>
             </template>
 
@@ -25,7 +34,8 @@
                 {{ expense.category }}
               </v-list-item-title>
               <v-list-item-subtitle class="text-body-small text-secondary">
-                {{ formatDate(expense.date) }} • {{ expense.paymentMethod }} • Cartão: {{ expense.card }}
+                {{ formatDate(expense.date) }} • {{ expense.paymentMethod }} •
+                Cartão: {{ expense.card }}
               </v-list-item-subtitle>
               <v-list-item-subtitle class="text-body-small text-secondary">
                 Parcelas: {{ expense.installments }}x
@@ -34,14 +44,28 @@
 
             <template #append>
               <div
-                :style="{ color: amountColor(expense.value), fontWeight: '700', fontSize: '1.25rem' }"
+                :style="{
+                  color: amountColor(expense.value),
+                  fontWeight: '700',
+                  fontSize: '1.25rem',
+                }"
               >
                 R$ {{ expense.value.toFixed(2) }}
               </div>
-              <v-btn icon color="primary" variant="text" @click="openEditDialog(expense)">
+              <v-btn
+                icon
+                color="primary"
+                variant="text"
+                @click="openEditDialog(expense)"
+              >
                 <v-icon>mdi-pencil</v-icon>
               </v-btn>
-              <v-btn icon color="error" variant="text" @click="openDeleteDialog(expense.id)">
+              <v-btn
+                icon
+                color="error"
+                variant="text"
+                @click="openDeleteDialog(expense.id)"
+              >
                 <v-icon>mdi-delete</v-icon>
               </v-btn>
             </template>
@@ -64,8 +88,12 @@
       <v-card-text>Tem certeza que deseja excluir este gasto?</v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn color="secondary" variant="outlined" @click="cancelDelete">Cancelar</v-btn>
-        <v-btn color="error" variant="flat" @click="confirmDelete">Excluir</v-btn>
+        <v-btn color="secondary" variant="outlined" @click="cancelDelete"
+          >Cancelar</v-btn
+        >
+        <v-btn color="error" variant="flat" @click="confirmDelete"
+          >Excluir</v-btn
+        >
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -179,7 +207,9 @@ const groupedExpenses = computed(() => {
 });
 
 const orderedGroupedExpenses = computed(() => {
-  const sortedKeys = Object.keys(groupedExpenses.value).sort((a, b) => b.localeCompare(a));
+  const sortedKeys = Object.keys(groupedExpenses.value).sort((a, b) =>
+    b.localeCompare(a)
+  );
   const result: Record<string, Expense[]> = {};
   sortedKeys.forEach((key) => {
     const label = format(parseISO(`${key}-01`), "MMMM yyyy", { locale: ptBR });
