@@ -1,17 +1,12 @@
-import axios from 'axios';
-import { defineNuxtPlugin } from '#app';
+import axios from "axios";
+import { defineNuxtPlugin, useRuntimeConfig } from "#app";
 
 export default defineNuxtPlugin(() => {
+  const config = useRuntimeConfig();
   const api = axios.create({
-    baseURL: 'http://localhost:7000/api',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    baseURL: config.public.apiBase, 
+    headers: { "Content-Type": "application/json" },
   });
 
-  return {
-    provide: {
-      api: api
-    }
-  }
+  return { provide: { api } };
 });

@@ -7,6 +7,12 @@ export default defineNuxtConfig({
     ssr: true,
   },
 
+  runtimeConfig: {
+    public: {
+      apiBase: "/api",
+    },
+  },
+
   css: [
     "vuetify/lib/styles/main.sass",
     "@mdi/font/css/materialdesignicons.min.css",
@@ -42,7 +48,7 @@ export default defineNuxtConfig({
       },
     },
     ssr: {
-      noExternal: ['form-data'],
+      noExternal: ["form-data"],
     },
   },
 
