@@ -165,7 +165,7 @@ watch(paymentMethod, (newMethod) => {
 const fetchCategories = async () => {
   categoriesLoading.value = true;
   try {
-    const response = await $api.get("/Categories");
+    const response = await $api.get("/categories");
     categories.value = response.data;
   } catch (error) {
     console.error("Erro ao buscar categorias:", error);

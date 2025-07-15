@@ -42,7 +42,7 @@ export const useExpensesStore = defineStore("expenses", {
       this.loading = true;
       this.error = null;
       try {
-        const response = await $api.get<Expense[]>("/Expenses");
+        const response = await $api.get<Expense[]>("/expenses");
         this.expenses = response.data;
       } catch (err: any) {
         this.error =

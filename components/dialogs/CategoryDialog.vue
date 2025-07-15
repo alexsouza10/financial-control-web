@@ -152,9 +152,9 @@ const saveCategory = async () => {
     const categoryNameUpperCase = form.value.name.trim().toUpperCase();
 
     if (isEditing.value) {
-      await $api.put(`/Categories/${form.value.id}`, { name: categoryNameUpperCase });
+      await $api.put(`/categories/${form.value.id}`, { name: categoryNameUpperCase });
     } else {
-      await $api.post('/Categories', { name: categoryNameUpperCase });
+      await $api.post('/categories', { name: categoryNameUpperCase });
     }
     emit('categorySaved');
     closeModal();

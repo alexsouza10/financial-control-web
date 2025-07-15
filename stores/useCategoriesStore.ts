@@ -26,7 +26,7 @@ export const useCategoriesStore = defineStore("categories", {
       this.loading = true;
       this.error = null;
       try {
-        const response = await $api.get<Category[]>("/Categories");
+        const response = await $api.get<Category[]>("/categories");
         this.categories = response.data;
       } catch (err: any) {
         this.error =

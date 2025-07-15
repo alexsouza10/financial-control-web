@@ -181,7 +181,7 @@ const snackbarColor = ref("success");
 const fetchCategories = async () => {
   loading.value = true;
   try {
-    const response = await $api.get("/Categories");
+    const response = await $api.get("/categories");
     if (response.data) {
       categories.value = response.data;
     } else {
@@ -238,7 +238,7 @@ const confirmDelete = (id, name) => {
 const deleteCategory = async () => {
   deleting.value = true; // Ativa o loading no botão do DeleteDialog
   try {
-    await $api.delete(`/Categories/${categoryToDeleteId.value}`);
+    await $api.delete(`/categories/${categoryToDeleteId.value}`);
     showFeedback(
       "success",
       `Categoria "${categoryToDeleteName.value.toUpperCase()}" excluída com sucesso!`
