@@ -29,10 +29,66 @@ export const useExpensesStore = defineStore("expenses", {
         0
       ),
 
+    currentMonthExpenses: (state: ExpensesState): number => {
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1; // 1-12
+      const currentYear = now.getFullYear();
+      
+      console.log('--- currentMonthExpenses ---');
+      console.log('Current date:', now.toISOString());
+      console.log(`Looking for expenses in month: ${currentMonth}/${currentYear}`);
+      
+      const total = state.expenses.reduce((sum: number, expense: Expense) => {
+        try {          
+          const expenseDate = new Date(expense.date);
+          const expenseMonth = expenseDate.getMonth() + 1;
+          const expenseYear = expenseDate.getFullYear();
+          
+          if (expenseMonth === currentMonth && expenseYear === currentYear) {
+            console.log(`✅ Adding expense ${expense.id} to total: ${expense.value}`);
+            return sum + expense.value;
+          }
+        } catch (error) {
+          console.error('❌ Error processing expense:', {
+            id: expense.id,
+            date: expense.date,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+        return sum;
+      }, 0);
+
+      return total;
+    },
+
     averageExpense(): number {
-      return this.expenses.length > 0
-        ? this.totalExpenses / this.expenses.length
-        : 0;
+      const now = new Date();
+      const currentDay = now.getDate();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      
+      // Filtra apenas os gastos do mês atual
+      const currentMonthExpenses = this.expenses.filter(expense => {
+        try {
+          const expenseDate = new Date(expense.date);
+          return (expenseDate.getMonth() + 1) === currentMonth && 
+                 expenseDate.getFullYear() === currentYear;
+        } catch {
+          return false;
+        }
+      });
+      
+      if (currentMonthExpenses.length === 0) return 0;
+      
+      // Soma total dos gastos do mês
+      const monthlyTotal = currentMonthExpenses.reduce((sum, exp) => sum + exp.value, 0);
+      
+      // Calcula a média baseada nos dias decorridos do mês
+      // Evita divisão por zero e garante pelo menos 1 dia
+      const daysElapsed = Math.max(1, currentDay);
+      
+      // Retorna a média diária baseada nos dias decorridos
+      return monthlyTotal / daysElapsed;
     },
   },
 

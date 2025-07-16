@@ -26,14 +26,19 @@
 
           <v-col cols="12" md="6">
             <v-text-field
-              v-model.number="totalValue"
+              v-model="formattedValue"
+              @input="formatInput"
+              @blur="handleBlur"
+              @click:clear="handleClear"
               label="Valor Total (R$)"
-              type="number"
               variant="outlined"
               clearable
               density="compact"
-              min="0.01"
-              :rules="[(v) => v > 0 || 'Valor deve ser positivo']"
+              :rules="[(v) => {
+                if (!v) return 'Campo obrigatório';
+                const num = parseFloat(v?.replace(/\./g, '').replace(',', '.') || '0');
+                return num > 0 || 'Valor deve ser positivo';
+              }]"
               required
             />
           </v-col>
@@ -88,7 +93,7 @@
           <v-col cols="12" :md="paymentMethod === 'Cartão de Crédito' ? 6 : 12">
             <v-text-field
               label="Valor de Cada Parcela (R$)"
-              :model-value="installmentValue.toFixed(2)"
+              :model-value="formatCurrency(installmentValue)"
               readonly
               variant="outlined"
               density="compact"
@@ -124,6 +129,51 @@ const expensesStore = useExpensesStore();
 const { $api } = useNuxtApp();
 
 const totalValue = ref(0);
+const formattedValue = ref('');
+
+const formatInput = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  let value = input.value.replace(/\D/g, '');
+  
+  // Remove leading zeros
+  value = value.replace(/^0+/, '');
+  
+  if (value === '') {
+    formattedValue.value = '';
+    totalValue.value = 0;
+    return;
+  }
+  
+  // Convert to number and format with 2 decimal places
+  const numberValue = parseInt(value) / 100;
+  totalValue.value = numberValue;
+  
+  // Format with thousands separator and 2 decimal places
+  formattedValue.value = numberValue.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
+const formatCurrency = (value: number) => {
+  return value.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
+const handleBlur = () => {
+  if (totalValue.value === 0) {
+    formattedValue.value = '';
+  } else {
+    formattedValue.value = formatCurrency(totalValue.value);
+  }
+};
+
+const handleClear = () => {
+  totalValue.value = 0;
+  formattedValue.value = '';
+};
 const paymentMethod = ref("");
 const installments = ref(1);
 const selectedCategory = ref(null);
@@ -138,7 +188,7 @@ const paymentMethods = [
   "Boleto",
 ];
 
-const cards = ["Nubank", "Banco Inter", "Santander", "Bradesco", "Itaú"];
+const cards = ["Nubank", "Hipercard", "Santander", "Outro"];
 
 const categories = ref([]);
 const categoriesLoading = ref(false);

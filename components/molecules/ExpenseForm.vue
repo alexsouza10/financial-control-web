@@ -146,7 +146,7 @@ const paymentMethods = [
   "Boleto",
 ];
 
-const cards = ["Nubank", "Banco Inter", "Santander", "Bradesco", "Itaú"];
+const cards = ["Nubank", "Hipercard", "Santander", "Outro"];
 
 const snackbar = ref({
   show: false,

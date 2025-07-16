@@ -1,34 +1,26 @@
 <template>
-  <v-text-field
-    :model-value="formattedDate"
-    :label="label"
-    type="date"
-    variant="outlined"
-    density="comfortable"
-    readonly
-    @click="menu = true"
-    v-bind="$attrs"
+  <v-menu
+    v-model="menu"
+    :close-on-content-click="false"
+    transition="scale-transition"
+    offset-y
+    min-width="auto"
   >
-    <template #append-inner>
-      <v-icon @click="menu = true">mdi-calendar</v-icon>
-    </template>
-  </v-text-field>
-
-  <v-menu v-model="menu" :close-on-content-click="false" location="bottom">
     <template #activator="{ props: menuProps }">
       <v-text-field
-        v-bind="{ ...$attrs, ...menuProps }"
         :model-value="formattedDate"
         :label="label"
-        type="date"
-        variant="outlined"
-        density="comfortable"
+        prepend-icon="mdi-calendar"
         readonly
+        v-bind="{ ...$attrs, ...menuProps }"
+        :density="density"
+        :rules="rules"
+        :required="required"
+        variant="outlined"
         @click="menu = true"
-        class="d-none"
       ></v-text-field>
     </template>
-    <v-date-picker v-model="internalDate" @update:model-value="selectDate" />
+    <v-date-picker v-model="internalDate" @update:model-value="selectDate" locale="pt-BR" />
   </v-menu>
 </template>
 
@@ -37,8 +29,11 @@ import { ref, watch, computed } from "vue";
 import { format, parseISO } from "date-fns";
 
 const props = defineProps<{
-  modelValue: string;
+  modelValue: string; // Espera string no formato 'YYYY-MM-DD'
   label?: string;
+  density?: string;
+  rules?: any[];
+  required?: boolean;
 }>();
 
 const emit = defineEmits(["update:modelValue"]);
@@ -46,22 +41,7 @@ const emit = defineEmits(["update:modelValue"]);
 const menu = ref(false);
 const internalDate = ref<Date | null>(null);
 
-const formattedDate = computed(() => {
-  if (props.modelValue) {
-    try {
-      return format(parseISO(props.modelValue), "yyyy-MM-dd");
-    } catch (e) {
-      console.error(
-        "Erro ao formatar data para DatePickerField:",
-        props.modelValue,
-        e
-      );
-      return "";
-    }
-  }
-  return "";
-});
-
+// Sincroniza o modelValue externo com a ref interna do date picker
 watch(
   () => props.modelValue,
   (newVal) => {
@@ -69,11 +49,7 @@ watch(
       try {
         internalDate.value = parseISO(newVal);
       } catch (e) {
-        console.error(
-          "Erro ao parsear modelValue para DatePickerField:",
-          newVal,
-          e
-        );
+        console.error("Erro ao parsear modelValue no DatePickerField:", newVal, e);
         internalDate.value = null;
       }
     } else {
@@ -83,8 +59,22 @@ watch(
   { immediate: true }
 );
 
+// Formata a data para exibição no v-text-field (DD/MM/YYYY)
+const formattedDate = computed(() => {
+  if (internalDate.value) {
+    return format(internalDate.value, "dd/MM/yyyy");
+  }
+  return "";
+});
+
+// Quando o date picker interno é atualizado, emite a data formatada para o pai (YYYY-MM-DD)
 function selectDate(date: Date) {
-  emit("update:modelValue", format(date, "yyyy-MM-dd"));
-  menu.value = false; 
+  internalDate.value = date; // Atualiza a data interna
+  emit("update:modelValue", format(date, "yyyy-MM-dd")); // Emite no formato esperado pelo pai
+  menu.value = false; // Fecha o menu após a seleção
 }
 </script>
+
+<style scoped>
+/* Nenhum estilo específico necessário aqui, Vuetify cuida da maioria */
+</style>
