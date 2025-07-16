@@ -1,44 +1,45 @@
 <template>
-  <v-row class="mb-6" justify="center" align="center" dense>
-    <v-col cols="12" sm="6">
-      <ExpenseCard
-        icon="mdi-cash-multiple"
-        title="Total"
-        :value="store.totalExpenses"
-        color="green darken-2"
-      />
-    </v-col>
-
-    <v-col cols="12" sm="6">
-      <ExpenseCard
-        icon="mdi-calculator"
-        title="Média"
-        :value="store.averageExpense"
-        color="blue darken-2"
-      />
-    </v-col>
-
-    <v-col cols="12" sm="6">
-      <ExpenseCard
-        icon="mdi-wallet"
-        title="Salário"
-        :value="store.salary"
-        color="orange darken-2"
-        edit-icon="mdi-pencil"
-        edit-title="Editar salário"
-        @edit-click="openDialog"
-      />
-    </v-col>
-
-    <v-col cols="12" sm="6">
-      <ExpenseCard
-        icon="mdi-cash-check"
-        title="Sobra"
-        :value="restante"
-        color="teal darken-2"
-      />
-    </v-col>
-  </v-row>
+  <v-sheet class="mb-4 pa-2 rounded-lg" color="transparent">
+    <v-row no-gutters>
+      <!-- Salário -->
+      <v-col cols="12" sm="4" class="pa-1">
+        <ExpenseCard
+          icon="mdi-wallet"
+          title="Salário"
+          :value="store.salary"
+          color="success"
+          :max-value="store.salary * 1.5"
+          edit-icon="mdi-pencil"
+          edit-title="Editar salário"
+          @edit-click="openDialog"
+        />
+      </v-col>
+      
+      <!-- Total do Mês -->
+      <v-col cols="12" sm="4" class="pa-1">
+        <ExpenseCard
+          icon="mdi-cash-multiple"
+          title="Total do Mês"
+          :value="store.currentMonthExpenses"
+          color="error"
+          :max-value="store.salary || 1"
+          :custom-class="getExpenseCardClass('total')"
+        />
+      </v-col>
+      
+      <!-- Saldo -->
+      <v-col cols="12" sm="4" class="pa-1">
+        <ExpenseCard
+          icon="mdi-cash-check"
+          title="Saldo"
+          :value="restante"
+          color="warning"
+          :max-value="Math.max(Math.abs(store.salary), Math.abs(restante) * 1.5, 1)"
+          :custom-class="getExpenseCardClass('saldo')"
+        />
+      </v-col>
+    </v-row>
+  </v-sheet>
 
   <EditNumberDialog
     v-model="dialog"
@@ -48,7 +49,7 @@
     label="Novo salário"
     :min="0"
     suffix="R$"
-    confirm-color="orange darken-2"
+    confirm-color="warning"
     @update:value="updateSalary"
   />
 </template>
@@ -62,7 +63,7 @@ import EditNumberDialog from "../dialogs/EditNumberDialog.vue";
 const store = useExpensesStore();
 const dialog = ref(false);
 
-const restante = computed(() => store.salary - store.totalExpenses);
+const restante = computed(() => store.salary - store.currentMonthExpenses);
 
 function openDialog() {
   dialog.value = true;
@@ -75,7 +76,49 @@ function updateSalary(newValue: number) {
   dialog.value = false;
 }
 
+// Adiciona classes dinâmicas baseadas no estado
+function getExpenseCardClass(type: string) {
+  const classes = [];
+  
+  if (type === 'saldo') {
+    if (restante.value >= 0) {
+      classes.push('bg-success-lighten-5');
+    } else {
+      classes.push('bg-error-lighten-5');
+    }
+  } else if (type === 'total') {
+    const percentage = (store.currentMonthExpenses / (store.salary || 1)) * 100;
+    if (percentage > 80) {
+      classes.push('bg-error-lighten-5');
+    } else if (percentage > 50) {
+      classes.push('bg-warning-lighten-5');
+    } else {
+      classes.push('bg-success-lighten-5');
+    }
+  }
+  
+  return classes.join(' ');
+}
+
+// Carrega os dados iniciais
 onMounted(() => {
   store.fetchSalary();
+  store.fetchExpenses();
 });
 </script>
+
+<style scoped>
+/* Animações */
+@keyframes subtlePulse {
+  0% { box-shadow: 0 0 0 0 rgba(var(--v-theme-error), 0.2); }
+  70% { box-shadow: 0 0 0 6px rgba(var(--v-theme-error), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--v-theme-error), 0); }
+}
+
+/* Melhorias de responsividade */
+@media (max-width: 960px) {
+  :deep(.v-card) {
+    margin-bottom: 8px;
+  }
+}
+</style>

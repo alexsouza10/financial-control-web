@@ -178,7 +178,7 @@ const isSalaryEditMode = computed(
 );
 
 const paymentMethods = ["Cartão de Crédito", "Débito", "Dinheiro", "Pix"];
-const cardOptions = ["Nubank", "Inter", "Neon", "PicPay", "Outro"];
+const cardOptions = ["Nubank", "Hipercard", "Santander", "Outro"];
 
 const valueRules = {
   required: (v: any) =>
