@@ -72,7 +72,7 @@ export default defineNuxtConfig({
 
   // Configuração do Nitro (SSR)
   nitro: {
-    preset: process.env.NITRO_PRESET || "node-server",
+    preset: "static",
     serveStatic: true,
     prerender: {
       crawlLinks: true,
