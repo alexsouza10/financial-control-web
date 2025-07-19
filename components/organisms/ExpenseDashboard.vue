@@ -1,57 +1,270 @@
 <template>
   <v-container fluid class="analytics-dashboard">
-    <v-card class="pa-4 mb-6" elevation="2">
-      <v-card-title class="text-h5 mb-2"
-        >Financial Analytics Dashboard</v-card-title
-      >
-      <v-card-subtitle>Visualize e gerencie suas despesas</v-card-subtitle>
+    <!-- Header Section -->
+    <v-card class="mb-6 pa-4 rounded-xl elevation-3">
+      <v-row align="center" justify="space-between">
+        <!-- Título e Ícone -->
+        <v-col cols="12" md="6" class="d-flex align-center">
+          <v-icon color="primary" size="30" class="mr-3">
+            mdi-chart-areaspline
+          </v-icon>
+          <div>
+            <h2 class="text-h5 font-weight-medium mb-1">Análise Financeira</h2>
+            <div class="text-body-2 text-medium-emphasis">
+              Visualize e analise suas despesas em detalhes
+            </div>
+          </div>
+        </v-col>
 
+        <!-- Botão Atualizar -->
+        <!-- <v-col cols="12" md="auto" class="d-flex justify-end">
+          <v-tooltip text="Atualizar dados">
+            <template #activator="{ props }">
+              <v-btn
+                v-bind="props"
+                variant="flat"
+                color="primary"
+                @click="refreshData"
+                :loading="loading"
+                class="text-capitalize"
+                prepend-icon="mdi-refresh"
+              >
+                Atualizar
+              </v-btn>
+            </template>
+          </v-tooltip>
+        </v-col> -->
+      </v-row>
+    </v-card>
+
+    <!-- Filters Row -->
+    <v-card class="mb-6" elevation="2">
       <v-card-text>
-        <v-row class="mb-6">
-          <v-col cols="12" md="4">
-            <DatePickerField v-model="startDateLocal" label="Data Início" />
-          </v-col>
-
-          <v-col cols="12" md="4">
-            <DatePickerField v-model="endDateLocal" label="Data Fim" />
-          </v-col>
-
-          <v-col cols="12" md="4">
+        <v-row>
+          <v-col cols="12" md="3">
             <v-select
-              :model-value="selectedCategoryLocal"
-              @update:model-value="onCategoryChange"
-              :items="['All', ...uniqueCategories]"
-              label="Categoria"
-              outlined
-              dense
-              clearable
+              v-model="selectedPeriod"
+              :items="dateRanges"
+              label="Período"
+              density="comfortable"
+              variant="outlined"
+              item-title="text"
+              item-value="value"
+              hide-details
+              class="mb-4"
             />
+          </v-col>
+          <v-col cols="12" md="3">
+            <v-menu
+              v-model="startMenu"
+              :close-on-content-click="false"
+              transition="scale-transition"
+              min-width="auto"
+              offset-y
+            >
+              <template v-slot:activator="{ props }">
+                <v-text-field
+                  v-model="formattedStartDate"
+                  label="Data Inicial"
+                  prepend-inner-icon="mdi-calendar"
+                  readonly
+                  v-bind="props"
+                  variant="outlined"
+                  density="comfortable"
+                  clearable
+                  @click:clear="startDate = ''"
+                  :disabled="selectedPeriod !== 'custom'"
+                ></v-text-field>
+              </template>
+              <v-date-picker
+                v-model="startDate"
+                @update:model-value="startMenu = false"
+                :max="endDate || format(new Date(), 'yyyy-MM-dd')"
+              ></v-date-picker>
+            </v-menu>
+          </v-col>
+          <v-col cols="12" md="3">
+            <v-menu
+              v-model="endMenu"
+              :close-on-content-click="false"
+              transition="scale-transition"
+              min-width="auto"
+              offset-y
+            >
+              <template v-slot:activator="{ props }">
+                <v-text-field
+                  v-model="formattedEndDate"
+                  label="Data Final"
+                  prepend-inner-icon="mdi-calendar"
+                  readonly
+                  v-bind="props"
+                  variant="outlined"
+                  density="comfortable"
+                  clearable
+                  @click:clear="endDate = ''"
+                  :disabled="selectedPeriod !== 'custom'"
+                ></v-text-field>
+              </template>
+              <v-date-picker
+                v-model="endDate"
+                @update:model-value="endMenu = false"
+                :min="startDate"
+                :max="format(new Date(), 'yyyy-MM-dd')"
+              ></v-date-picker>
+            </v-menu>
+          </v-col>
+          <!-- <v-col cols="12" md="3">
+            <v-select
+              v-model="selectedCategory"
+              :items="categoryOptions"
+              label="Categoria"
+              variant="outlined"
+              density="comfortable"
+              clearable
+              hide-details
+              item-title="text"
+              item-value="value"
+            ></v-select>
+          </v-col> -->
+
+          <v-col cols="12" md="3">
+            <v-select
+              v-model="groupBy"
+              :items="[
+                { text: 'Dia', value: 'day' },
+                { text: 'Semana', value: 'week' },
+                { text: 'Mês', value: 'month' },
+              ]"
+              label="Agrupar por"
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              item-title="text"
+              item-value="value"
+            ></v-select>
           </v-col>
         </v-row>
+      </v-card-text>
+    </v-card>
 
-        <v-row>
-          <v-col cols="12" md="6">
-            <CategoryPieChart
-              :data="pieChartData"
-              title="Total Expenses by Category"
-            />
-          </v-col>
-          <v-col cols="12" md="6">
+    <v-row class="mb-6">
+      <v-col
+        v-for="(stat, index) in summaryStats"
+        :key="index"
+        cols="12"
+        sm="6"
+        md="3"
+      >
+        <v-card height="100%" :color="stat.color" dark>
+          <v-card-text class="pa-4">
+            <div class="d-flex justify-space-between align-center">
+              <div>
+                <div class="text-subtitle-2 mb-1">{{ stat.title }}</div>
+                <div class="text-h5 font-weight-bold">
+                  {{ formatCurrency(stat.value) }}
+                </div>
+                <div
+                  v-if="stat.change !== undefined"
+                  class="text-caption d-flex align-center mt-1"
+                >
+                  <v-icon
+                    :color="stat.change >= 0 ? 'green' : 'red'"
+                    size="small"
+                  >
+                    {{ stat.change >= 0 ? "mdi-arrow-up" : "mdi-arrow-down" }}
+                  </v-icon>
+                  <span class="ml-1"
+                    >{{ Math.abs(stat.change) }}% em relação ao período
+                    anterior</span
+                  >
+                </div>
+              </div>
+              <v-avatar :color="stat.iconColor" size="48" class="elevation-4">
+                <v-icon>{{ stat.icon }}</v-icon>
+              </v-avatar>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <v-row class="mb-6">
+      <v-col cols="12" md="8">
+        <v-card height="100%" class="pa-4">
+          <v-card-title class="text-h6"
+            >Despesas ao Longo do Tempo</v-card-title
+          >
+          <v-card-text>
             <ExpenseLineChart
               :data="lineChartData"
-              title="Daily Expenses Trend"
+              :group-by="groupBy"
+              :height="300"
             />
-          </v-col>
-        </v-row>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" md="4">
+        <v-card height="100%" class="pa-4">
+          <v-card-title class="text-h6"
+            >Distribuição por Categoria</v-card-title
+          >
+          <v-card-text>
+            <CategoryPieChart :data="pieChartData" :height="300" />
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
 
-        <v-divider class="my-6" />
+    <v-card class="mb-6">
+      <v-card-title class="d-flex align-center">
+        <span>Despesas por Categoria</span>
+        <v-spacer></v-spacer>
+        <v-btn
+          variant="text"
+          color="primary"
+          size="small"
+          @click="toggleCategoryTable"
+        >
+          {{ showCategoryTable ? "Ocultar Detalhes" : "Mostrar Detalhes" }}
+          <v-icon right>{{
+            showCategoryTable ? "mdi-chevron-up" : "mdi-chevron-down"
+          }}</v-icon>
+        </v-btn>
+      </v-card-title>
+      <v-expand-transition>
+        <div v-show="showCategoryTable">
+          <v-card-text>
+            <v-data-table
+              :headers="categoryHeaders"
+              :items="categoryBreakdown"
+              :items-per-page="5"
+              class="elevation-1"
+            >
+              <template v-slot:item.amount="{ item }">
+                {{ formatCurrency(item.amount) }}
+              </template>
+              <template v-slot:item.percentage="{ item }">
+                <v-progress-linear
+                  :model-value="item.percentage"
+                  height="20"
+                  :color="getCategoryColor(item.category)"
+                  rounded
+                >
+                  <template v-slot:default="{ value }">
+                    <strong>{{ Math.ceil(value) }}%</strong>
+                  </template>
+                </v-progress-linear>
+              </template>
+            </v-data-table>
+          </v-card-text>
+        </div>
+      </v-expand-transition>
+    </v-card>
 
-        <v-row>
-          <v-col cols="12" md="12">
-            <h3 class="text-h6 mb-3 text-center">Recent Expenses (Filtered)</h3>
-            <ExpenseList :expenses="filteredExpenses" />
-          </v-col>
-        </v-row>
+    <v-card>
+      <v-card-title>Transações Recentes</v-card-title>
+      <v-card-text>
+        <ExpenseList :expenses="filteredExpenses" />
       </v-card-text>
     </v-card>
   </v-container>
@@ -59,103 +272,697 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import DatePickerField from "~/components/atoms/DatePickerField.vue";
+import { useExpensesStore } from "~/stores/useExpensesStore";
+import { useCategoriesStore } from "~/stores/useCategoriesStore";
 import CategoryPieChart from "~/components/molecules/CategoryPieChart.vue";
 import ExpenseLineChart from "~/components/molecules/ExpenseLineChart.vue";
 import ExpenseList from "./ExpenseList.vue";
 import {
-  filterExpensesByDateAndCategory,
-  groupByCategory,
-  groupExpensesByDate,
-  getUniqueCategories,
-  formatDate,
-  type Expense,
-} from "~/utils/expenseUtils";
+  format,
+  subMonths,
+  startOfMonth,
+  endOfMonth,
+  parseISO,
+  isWithinInterval,
+} from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-// Dados iniciais
-const expenses = ref<Expense[]>([
-  { category: "Food", amount: 200, date: "2025-06-01" },
-  { category: "Transport", amount: 100, date: "2025-06-02" },
-  { category: "Education", amount: 300, date: "2025-06-03" },
-  { category: "Food", amount: 150, date: "2025-06-04" },
-  { category: "Shopping", amount: 250, date: "2025-06-05" },
-  { category: "Utilities", amount: 120, date: "2025-06-06" },
-  { category: "Entertainment", amount: 80, date: "2025-06-07" },
-  { category: "Food", amount: 100, date: "2025-06-08" },
-  { category: "Transport", amount: 50, date: "2025-06-09" },
-  { category: "Shopping", amount: 180, date: "2025-06-10" },
-  { category: "Utilities", amount: 90, date: "2025-06-11" },
-  { category: "Education", amount: 200, date: "2025-06-12" },
-  { category: "Entertainment", amount: 120, date: "2025-06-13" },
-  { category: "Food", amount: 70, date: "2025-06-14" },
-  { category: "Transport", amount: 30, date: "2025-06-15" },
+// Stores
+const expensesStore = useExpensesStore();
+const categoriesStore = useCategoriesStore();
+
+// State
+const loading = ref(false);
+const showCategoryTable = ref(true);
+const groupBy = ref<"day" | "week" | "month">("day");
+const selectedPeriod = ref("30d");
+const selectedCategory = ref<string | null>(null);
+const startDate = ref("");
+const endDate = ref("");
+const startMenu = ref(false);
+const endMenu = ref(false);
+
+const today = new Date();
+const thirtyDaysAgo = new Date();
+thirtyDaysAgo.setDate(today.getDate() - 30);
+
+startDate.value = format(thirtyDaysAgo, "yyyy-MM-dd");
+endDate.value = format(today, "yyyy-MM-dd");
+
+const dateRanges = [
+  { text: "Personalizado", value: "custom" },
+  { text: "Últimos 7 dias", value: "7d" },
+  { text: "Últimos 15 dias", value: "15d" },
+  { text: "Últimos 30 dias", value: "30d" },
+  { text: "Últimos 3 meses", value: "90d" },
+  { text: "Últimos 6 meses", value: "180d" },
+  { text: "Últimos 12 meses", value: "365d" },
+  { text: "Mês atual", value: "current_month" },
+  { text: "Mês anterior", value: "last_month" },
+  { text: "Ano atual", value: "current_year" },
+  { text: "Ano anterior", value: "last_year" },
+];
+
+// Watch for period changes
+watchEffect(() => {
+  if (selectedPeriod.value === "custom") return;
+
+  const today = new Date();
+  const newStartDate = new Date();
+
+  switch (selectedPeriod.value) {
+    case "7d":
+      newStartDate.setDate(today.getDate() - 7);
+      break;
+    case "15d":
+      newStartDate.setDate(today.getDate() - 15);
+      break;
+    case "30d":
+      newStartDate.setDate(today.getDate() - 30);
+      break;
+    case "90d":
+      newStartDate.setMonth(today.getMonth() - 3);
+      break;
+    case "180d":
+      newStartDate.setMonth(today.getMonth() - 6);
+      break;
+    case "365d":
+      newStartDate.setFullYear(today.getFullYear() - 1);
+      break;
+    case "current_month":
+      newStartDate.setDate(1);
+      break;
+    case "last_month":
+      newStartDate.setMonth(today.getMonth() - 1);
+      newStartDate.setDate(1);
+      const lastDayOfLastMonth = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        0
+      );
+      endDate.value = format(lastDayOfLastMonth, "yyyy-MM-dd");
+      break;
+    case "current_year":
+      newStartDate.setMonth(0, 1);
+      break;
+    case "last_year":
+      newStartDate.setFullYear(today.getFullYear() - 1, 0, 1);
+      endDate.value = format(
+        new Date(today.getFullYear() - 1, 11, 31),
+        "yyyy-MM-dd"
+      );
+      return;
+  }
+
+  if (!["last_month", "last_year"].includes(selectedPeriod.value)) {
+    endDate.value = format(today, "yyyy-MM-dd");
+  }
+
+  startDate.value = format(newStartDate, "yyyy-MM-dd");
+});
+
+watch([() => startDate.value, () => endDate.value], () => {
+  if (selectedPeriod.value === "custom") return;
+
+  const currentStart = startDate.value;
+  const currentEnd = endDate.value;
+
+  if (!currentStart || !currentEnd) return;
+
+  const today = new Date();
+  const startDateObj = new Date(currentStart);
+  const endDateObj = new Date(currentEnd);
+
+  const isSameDay = (d1: Date, d2: Date) => {
+    return (
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate()
+    );
+  };
+
+  const createDate = (year: number, month: number, day: number) => {
+    return new Date(year, month, day, 0, 0, 0, 0);
+  };
+
+  type DayRange = { id: string; days: number };
+  type DateRange = { id: string; start: Date; end: Date };
+
+  const dayRanges: DayRange[] = [
+    { id: "7d", days: 7 },
+    { id: "15d", days: 15 },
+    { id: "30d", days: 30 },
+    { id: "90d", days: 90 },
+    { id: "180d", days: 180 },
+    { id: "365d", days: 365 },
+  ];
+
+  const dateRanges: DateRange[] = [
+    {
+      id: "current_month",
+      start: createDate(today.getFullYear(), today.getMonth(), 1),
+      end: createDate(today.getFullYear(), today.getMonth() + 1, 0),
+    },
+    {
+      id: "last_month",
+      start: createDate(today.getFullYear(), today.getMonth() - 1, 1),
+      end: createDate(today.getFullYear(), today.getMonth(), 0),
+    },
+    {
+      id: "current_year",
+      start: createDate(today.getFullYear(), 0, 1),
+      end: createDate(today.getFullYear(), 11, 31),
+    },
+    {
+      id: "last_year",
+      start: createDate(today.getFullYear() - 1, 0, 1),
+      end: createDate(today.getFullYear() - 1, 11, 31),
+    },
+  ];
+
+  for (const range of dayRanges) {
+    const rangeStart = new Date(today);
+    rangeStart.setDate(today.getDate() - range.days);
+
+    if (isSameDay(startDateObj, rangeStart) && isSameDay(endDateObj, today)) {
+      selectedPeriod.value = range.id;
+      return;
+    }
+  }
+
+  for (const range of dateRanges) {
+    if (
+      isSameDay(startDateObj, range.start) &&
+      isSameDay(endDateObj, range.end)
+    ) {
+      selectedPeriod.value = range.id;
+      return;
+    }
+  }
+
+  selectedPeriod.value = "custom";
+});
+
+const formattedStartDate = computed({
+  get() {
+    return startDate.value
+      ? format(new Date(startDate.value), "dd/MM/yyyy", { locale: ptBR })
+      : "";
+  },
+  set(val: string) {
+    startDate.value = val;
+  },
+});
+
+const formattedEndDate = computed({
+  get() {
+    return endDate.value
+      ? format(new Date(endDate.value), "dd/MM/yyyy", { locale: ptBR })
+      : "";
+  },
+  set(val: string) {
+    endDate.value = val;
+  },
+});
+
+// Categories
+const categoryOptions = computed(() => [
+  { text: "Todas as Categorias", value: null },
+  ...categoriesStore.categories.map((cat) => ({
+    text: cat.name,
+    value: cat.id.toString(),
+  })),
 ]);
 
-const startDate = ref<string | null>(null);
-const endDate = ref<string | null>(null);
-const selectedCategory = ref<string | null>(null);
-const startDateLocal = ref(startDate.value);
-const endDateLocal = ref(endDate.value);
-const selectedCategoryLocal = ref(selectedCategory.value ?? "All");
+type ExpenseWithCategory = {
+  id: string;
+  date: string;
+  value: number | string;
+  description?: string;
+  paymentMethod?: string;
+  card?: string;
+  installments?: number;
+  categoryId?: string | null;
+  category_id?: string | null;
+  [key: string]: any;
+};
 
-watch(startDateLocal, (val) => {
-  startDate.value = val;
-});
-watch(endDateLocal, (val) => {
-  endDate.value = val;
-});
-watch(
-  () => selectedCategoryLocal.value,
-  (val) => {
-    selectedCategory.value = val === "All" ? null : val;
-  }
-);
+const filteredExpenses = computed(() => {
+  if (!expensesStore.expenses) return [];
 
-watch(startDate, (val) => {
-  startDateLocal.value = val;
-});
-watch(endDate, (val) => {
-  endDateLocal.value = val;
-});
-watch(selectedCategory, (val) => {
-  selectedCategoryLocal.value = val ?? "All";
-});
-
-const uniqueCategories = computed(() => getUniqueCategories(expenses.value));
-const filteredExpenses = computed(() =>
-  filterExpensesByDateAndCategory(
-    expenses.value,
+  console.log(
+    "Filtering expenses with date range:",
     startDate.value,
-    endDate.value,
-    selectedCategory.value
-  )
-);
+    "to",
+    endDate.value
+  );
 
-const pieChartData = computed(() => groupByCategory(filteredExpenses.value));
-const lineChartData = computed(() =>
-  groupExpensesByDate(filteredExpenses.value)
-);
+  return (expensesStore.expenses as ExpenseWithCategory[]).filter((expense) => {
+    try {
+      const expenseDate = new Date(expense.date);
+      const start = startDate.value ? new Date(startDate.value) : null;
+      const end = endDate.value ? new Date(endDate.value) : null;
 
-const addExpense = (expense: Expense) => {
-  expenses.value.push(expense);
+      if (start) start.setHours(0, 0, 0, 0);
+      if (end) end.setHours(23, 59, 59, 999);
+
+      const isInDateRange =
+        (!start || expenseDate >= start) && (!end || expenseDate <= end);
+
+      const categoryId = expense.categoryId || expense.category_id;
+      const matchesCategory =
+        !selectedCategory.value ||
+        categoryId?.toString() === selectedCategory.value;
+
+      return isInDateRange && matchesCategory;
+    } catch (error) {
+      console.error("Error filtering expense:", expense, error);
+      return false;
+    }
+  });
+});
+
+const pieChartData = computed(() => {
+  console.log("Computing pie chart data...");
+
+  if (!filteredExpenses.value.length) {
+    console.log("No filtered expenses found");
+    return [];
+  }
+
+  const categoryMap = new Map<string, number>();
+
+  filteredExpenses.value.forEach((expense) => {
+    try {
+      const categoryId =
+        (expense as any).categoryId || (expense as any).category_id;
+
+      let categoryName = "Sem Categoria";
+      if (categoryId && categoriesStore.categories) {
+        const category = categoriesStore.categories.find(
+          (cat) => cat.id === categoryId
+        );
+        if (category) {
+          categoryName = category.name;
+        }
+      }
+
+      let amount = 0;
+      if (typeof expense.value === "number") {
+        amount = expense.value;
+      } else if (typeof expense.value === "string") {
+        amount = parseFloat(expense.value) || 0;
+      }
+
+      if (isNaN(amount)) {
+        console.warn("Invalid expense value:", expense);
+        return;
+      }
+
+      const currentTotal = categoryMap.get(categoryName) || 0;
+      categoryMap.set(categoryName, currentTotal + amount);
+    } catch (error) {
+      console.error("Error processing expense:", expense, error);
+    }
+  });
+
+  const result = Array.from(categoryMap.entries())
+    .map(([category, amount]) => ({
+      category,
+      amount: parseFloat(amount.toFixed(2)),
+    }))
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 10);
+
+  console.log("Final pie chart data:", result);
+  return result;
+});
+
+const lineChartData = computed(() => {
+  if (!filteredExpenses.value.length) return [];
+
+  const groupedData = new Map<string, number>();
+
+  const dates = filteredExpenses.value
+    .map((expense) => new Date(expense.date).getTime())
+    .sort((a, b) => a - b);
+
+  if (dates.length === 0) return [];
+
+  const minDate = new Date(Math.min(...dates));
+  const maxDate = new Date(Math.max(...dates));
+
+  const allDateKeys: string[] = [];
+  const currentDate = new Date(minDate);
+
+  while (currentDate <= maxDate) {
+    let key: string;
+
+    switch (groupBy.value) {
+      case "day":
+        key = format(currentDate, "dd/MM/yyyy", { locale: ptBR });
+        currentDate.setDate(currentDate.getDate() + 1);
+        break;
+      case "week":
+        key = `Semana ${format(currentDate, "w", {
+          locale: ptBR,
+        })} ${currentDate.getFullYear()}`;
+        currentDate.setDate(currentDate.getDate() + 7);
+        break;
+      case "month":
+      default:
+        key = `${format(currentDate, "MMMM", {
+          locale: ptBR,
+        })} ${currentDate.getFullYear()}`;
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        break;
+    }
+
+    if (!allDateKeys.includes(key)) {
+      allDateKeys.push(key);
+      groupedData.set(key, 0);
+    }
+  }
+
+  filteredExpenses.value.forEach((expense) => {
+    const date = new Date(expense.date);
+    let key: string;
+
+    switch (groupBy.value) {
+      case "day":
+        key = format(date, "dd/MM/yyyy", { locale: ptBR });
+        break;
+      case "week":
+        key = `Semana ${format(date, "w", {
+          locale: ptBR,
+        })} ${date.getFullYear()}`;
+        break;
+      case "month":
+      default:
+        key = `${format(date, "MMMM", { locale: ptBR })} ${date.getFullYear()}`;
+        break;
+    }
+
+    const amount =
+      typeof expense.value === "number"
+        ? expense.value
+        : parseFloat(String(expense.value || "0")) || 0;
+
+    if (!isNaN(amount)) {
+      groupedData.set(key, (groupedData.get(key) || 0) + amount);
+    }
+  });
+
+  return allDateKeys.map((date) => ({
+    date,
+    amount: parseFloat((groupedData.get(date) || 0).toFixed(2)),
+  }));
+});
+
+const categoryBreakdown = computed(() => {
+  if (!pieChartData.value.length) return [];
+
+  const total = pieChartData.value.reduce((sum, item) => sum + item.amount, 0);
+
+  return pieChartData.value
+    .map((item) => {
+      const percentage = total > 0 ? (item.amount / total) * 100 : 0;
+      return {
+        category: item.category,
+        amount: item.amount,
+        percentage: parseFloat(percentage.toFixed(2)),
+      };
+    })
+    .sort((a, b) => b.amount - a.amount);
+});
+
+const summaryStats = computed(() => {
+  const currentPeriodExpenses = filteredExpenses.value;
+  const currentTotal = currentPeriodExpenses.reduce(
+    (sum: number, exp: any) => sum + parseFloat(exp.value.toString()),
+    0
+  );
+  const previousPeriodExpenses = expensesStore.expenses.filter((expense) => {
+    if (!startDate.value || !endDate.value) return false;
+
+    const expenseDate = new Date(expense.date).getTime();
+    const start = new Date(startDate.value).getTime();
+    const end = new Date(endDate.value).getTime();
+
+    const periodLength = end - start;
+
+    const prevStart = start - periodLength - 86400000;
+    const prevEnd = start - 86400000;
+
+    return expenseDate >= prevStart && expenseDate <= prevEnd;
+  });
+
+  const previousTotal = previousPeriodExpenses.reduce(
+    (sum: number, exp: any) => sum + parseFloat(exp.value.toString()),
+    0
+  );
+
+  const change =
+    previousTotal > 0
+      ? ((currentTotal - previousTotal) / previousTotal) * 100
+      : 0;
+
+  const avgPerDay =
+    currentPeriodExpenses.length > 0
+      ? currentTotal / (currentPeriodExpenses.length * 1.0)
+      : 0;
+
+  return [
+    {
+      title: "Total Gasto",
+      value: currentTotal,
+      change: change,
+      icon: "mdi-cash-multiple",
+      iconColor: "primary",
+      color: "primary",
+    },
+    {
+      title: "Média por Dia",
+      value: avgPerDay,
+      change: 0,
+      icon: "mdi-chart-line",
+      iconColor: "success",
+      color: "success",
+    },
+    {
+      title: "Total de Despesas",
+      value: currentPeriodExpenses.length,
+      change: 0,
+      icon: "mdi-receipt",
+      iconColor: "info",
+      color: "info",
+    },
+    {
+      title: "Categorias Únicas",
+      value: new Set(currentPeriodExpenses.map((e) => e.category_id)).size,
+      change: 0,
+      icon: "mdi-shape",
+      iconColor: "orange",
+      color: "orange-darken-2",
+    },
+  ];
+});
+
+const categoryHeaders = [
+  {
+    title: "Categoria",
+    key: "category",
+    sortable: true,
+    align: "start" as const,
+  },
+  {
+    title: "Valor",
+    key: "amount",
+    sortable: true,
+    align: "end" as const,
+  },
+  {
+    title: "Porcentagem",
+    key: "percentage",
+    sortable: false,
+    align: "start" as const,
+    width: "50%",
+  },
+];
+
+const refreshData = async () => {
+  loading.value = true;
+  try {
+    await Promise.all([
+      expensesStore.fetchExpenses(),
+      categoriesStore.fetchAllCategories(),
+    ]);
+  } catch (error) {
+    console.error("Error refreshing data:", error);
+  } finally {
+    loading.value = false;
+  }
 };
 
-const onCategoryChange = (val: string | null) => {
-  selectedCategoryLocal.value = val ?? "All";
+const toggleCategoryTable = () => {
+  showCategoryTable.value = !showCategoryTable.value;
 };
 
-onMounted(() => {
-  const today = new Date();
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(today.getDate() - 30);
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
+};
 
-  startDate.value = formatDate(thirtyDaysAgo);
-  endDate.value = formatDate(today);
+const getCategoryColor = (categoryName: string) => {
+  let hash = 0;
+  for (let i = 0; i < categoryName.length; i++) {
+    hash = categoryName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const colors = [
+    "primary",
+    "secondary",
+    "success",
+    "error",
+    "warning",
+    "info",
+    "pink",
+    "purple",
+    "indigo",
+    "blue",
+    "cyan",
+    "teal",
+    "green",
+    "lime",
+    "yellow",
+    "amber",
+    "orange",
+    "brown",
+  ];
+
+  return colors[Math.abs(hash) % colors.length];
+};
+
+onMounted(async () => {
+  await refreshData();
 });
 </script>
 
 <style scoped>
 .analytics-dashboard {
   padding: 16px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.v-card {
+  margin-bottom: 24px;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.v-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1) !important;
+}
+
+.v-card-title {
+  padding: 16px 24px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.v-card-subtitle {
+  padding: 0 24px 16px;
+  opacity: 0.8;
+}
+
+.v-card-text {
+  padding: 20px 24px;
+}
+
+.summary-card {
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.summary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.chart-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
+}
+
+@media (max-width: 960px) {
+  .v-card-title {
+    padding: 12px 16px;
+  }
+
+  .v-card-subtitle {
+    padding: 0 16px 12px;
+  }
+
+  .v-card-text {
+    padding: 16px;
+  }
+}
+
+:deep(.v-theme--dark) .v-card-title {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+:deep(.v-theme--dark) .v-card-subtitle {
+  opacity: 0.7;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Dark theme scrollbar */
+:deep(.v-theme--dark) ::-webkit-scrollbar-track {
+  background: #2c2c2c;
+}
+
+:deep(.v-theme--dark) ::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+:deep(.v-theme--dark) ::-webkit-scrollbar-thumb:hover {
+  background: #777;
 }
 </style>

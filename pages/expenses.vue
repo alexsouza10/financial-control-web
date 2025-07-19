@@ -1,22 +1,34 @@
 <template>
   <v-container fluid class="expenses-page-container">
     <h1
-      class="page-title text-h4 text-sm-h3 font-weight-bold mb-8 text-center text-primary"
+      class="page-title text-h4 text-sm-h3 font-weight-bold mb-4 text-center text-primary"
     >
-      Visão Geral dos Gastos
+      Painel Financeiro
     </h1>
+    <p class="text-center text-body-1 mb-6">
+      Acompanhe seus gastos e mantenha suas finanças sob controle
+    </p>
 
-    <section class="mb-8">
+    <!-- Summary Cards -->
+    <section class="mb-6">
       <ExpenseSummary />
     </section>
 
-    <v-row justify="center" dense>
-      <v-col cols="12" lg="5" md="6">
-        <ExpenseRegisterCard />
+    <!-- Analytics Chart -->
+    <!-- <v-row class="mb-6" justify="center">
+      <v-col cols="12">
+        <AnalyticsChart />
+      </v-col>
+    </v-row> -->
+
+    <!-- Main Content -->
+    <v-row justify="center" class="mb-4" no-gutters>
+      <v-col cols="12" lg="5" class="pr-lg-3">
+        <ExpenseRegisterCard class="h-100" />
       </v-col>
 
-      <v-col cols="12" lg="7" md="6" class="d-flex">
-        <ExpenseList class="flex-grow-1" />
+      <v-col cols="12" lg="7" class="pl-lg-3 mt-4 mt-lg-0">
+        <ExpenseList />
       </v-col>
     </v-row>
   </v-container>
@@ -27,6 +39,7 @@ import { onMounted } from "vue";
 import ExpenseSummary from "~/components/organisms/ExpenseSummary.vue";
 import ExpenseRegisterCard from "~/components/organisms/ExpenseRegisterCard.vue";
 import ExpenseList from "~/components/organisms/ExpenseList.vue";
+import AnalyticsChart from "~/components/organisms/AnalyticsChart.vue";
 
 import { useExpensesStore } from "~/stores/useExpensesStore";
 import { useCategoriesStore } from "~/stores/useCategoriesStore";
@@ -37,6 +50,7 @@ const categoriesStore = useCategoriesStore();
 onMounted(() => {
   categoriesStore.fetchAllCategories();
   expensesStore.fetchExpenses();
+  expensesStore.fetchSalary();
 });
 </script>
 
