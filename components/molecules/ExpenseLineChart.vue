@@ -51,7 +51,7 @@ const chartData = computed(() => {
         fill: true,
         borderColor: "#2196f3",
         backgroundColor: "rgba(33, 150, 243, 0.2)",
-        tension: 0.4,
+        tension: 0.5,
         pointBackgroundColor: "#2196f3",
         pointBorderColor: "#fff",
         pointHoverBackgroundColor: "#fff",
@@ -64,7 +64,10 @@ const chartData = computed(() => {
 
 <style scoped>
 .expense-line-chart {
-  max-height: 400px;
+  height: 320px;
   width: 100%;
+  margin: -10px 0;
+  transform: scale(1);
+  transform-origin: top center;
 }
 </style>

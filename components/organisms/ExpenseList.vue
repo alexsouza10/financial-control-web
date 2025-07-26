@@ -1,99 +1,149 @@
 <template>
-  <v-expansion-panels multiple class="expense-panel-wrapper" variant="popout">
+  <v-expansion-panels
+    multiple
+    class="expense-panel-wrapper"
+    variant="popout"
+    flat
+  >
     <v-expansion-panel
-      v-for="(expensesInMonth, month) in orderedGroupedExpenses"
+      v-for="[month, monthExpenses] in Object.entries(orderedGroupedExpenses)"
       :key="month"
-      elevation="0"
-      class="mb-2"
+      class="mb-2 mobile-panel"
+      variant="popout"
+      density="compact"
     >
-      <v-expansion-panel-title class="font-weight-medium text-subtitle-2 px-3 py-2">
-        <div class="d-flex justify-space-between align-center w-100">
-          <div class="d-flex align-center">
-            <v-icon size="small" class="me-2">mdi-calendar-month</v-icon>
-            {{ month.charAt(0).toUpperCase() + month.slice(1) }}
-          </div>
-          <div class="d-flex align-center text-caption text-medium-emphasis">
-            <v-tooltip location="top">
-              <template v-slot:activator="{ props }">
-                <div v-bind="props" class="d-flex align-center">
-                  <v-icon size="14" class="me-1">mdi-cash-multiple</v-icon>
-                  {{ formatCurrency(calculateMonthlyTotal(expensesInMonth)) }}
-                </div>
-              </template>
-              <span>Total do mês</span>
-            </v-tooltip>
-            <v-divider vertical class="mx-2" />
-            <v-tooltip location="top">
-              <template v-slot:activator="{ props }">
-                <div v-bind="props" class="d-flex align-center">
-                  <v-icon size="14" class="me-1">mdi-calendar-today</v-icon>
-                  {{ formatCurrency(calculateDailyAverage(expensesInMonth)) }}/dia
-                </div>
-              </template>
-              <span>Média diária</span>
-            </v-tooltip>
-          </div>
+      <v-expansion-panel-title
+        class="font-weight-medium text-subtitle-2 px-2 px-sm-3 py-2"
+        expand-icon="mdi-chevron-down"
+        collapse-icon="mdi-chevron-up"
+      >
+        <div class="d-flex align-center text-truncate">
+          <v-icon size="16" class="me-2">mdi-calendar-month</v-icon>
+          <span class="text-truncate">{{ month }}</span>
+        </div>
+        <div class="d-flex align-center ml-auto flex-shrink-0">
+          <v-tooltip location="top" :disabled="$vuetify.display.smAndDown">
+            <template v-slot:activator="{ props }">
+              <div v-bind="props" class="d-flex align-center">
+                <v-icon size="14" class="me-1">mdi-cash-multiple</v-icon>
+                <span class="text-no-wrap">{{
+                  formatCurrency(calculateMonthlyTotal(monthExpenses))
+                }}</span>
+              </div>
+            </template>
+            <span>Total do mês</span>
+          </v-tooltip>
+          <v-tooltip location="top" :disabled="$vuetify.display.smAndDown">
+            <template v-slot:activator="{ props }">
+              <div v-bind="props" class="d-flex align-center ml-2 ml-sm-4">
+                <v-icon size="14" class="me-1">mdi-calendar-today</v-icon>
+                <span class="text-no-wrap"
+                  >{{
+                    formatCurrency(calculateDailyAverage(monthExpenses))
+                  }}/dia</span
+                >
+              </div>
+            </template>
+            <span>Média diária</span>
+          </v-tooltip>
         </div>
       </v-expansion-panel-title>
       <v-expansion-panel-text class="px-0 pt-1">
-        <v-list class="expense-list-items" density="compact">
+        <v-list class="expense-list-items" density="compact" nav>
           <v-list-item
-            v-for="expense in expensesInMonth"
+            v-for="expense in monthExpenses"
             :key="expense.id"
-            class="expense-item-card px-3 py-2"
-            rounded="lg"
-            variant="outlined"
+            class="expense-item-card px-2 px-sm-3 py-2"
+            :class="{ 'mobile-item': $vuetify.display.smAndDown }"
+            :title="expense.description || 'Sem descrição'"
+            :subtitle="formatDate(expense.date)"
+            :value="expense.id"
+            nav
           >
             <template #prepend>
-              <v-avatar :color="getCategoryColor(expense.categoryId)" size="36">
-                <v-icon size="20">{{ getCategoryIcon(expense.categoryId) }}</v-icon>
+              <v-avatar
+                :color="getCategoryColor(expense.categoryId)"
+                :size="$vuetify.display.smAndDown ? 32 : 36"
+                class="mr-2"
+              >
+                <v-icon
+                  :size="$vuetify.display.smAndDown ? 16 : 18"
+                  color="white"
+                >
+                  {{ getCategoryIcon(expense.categoryId) }}
+                </v-icon>
               </v-avatar>
             </template>
 
-            <v-list-item-title class="text-body-2 font-weight-medium">
-              {{ getCategoryName(expense.categoryId) }}
-              <div class="text-caption text-medium-emphasis">
-                {{ formatDate(expense.date) }}
-                <v-tooltip location="top" v-if="expense.paymentMethod === 'Cartão de Crédito'">
-                  <template v-slot:activator="{ props }">
-                    <v-icon v-bind="props" size="14" class="ml-1">mdi-credit-card-outline</v-icon>
-                  </template>
-                  <span>{{ expense.card }} • {{ expense.installments }}x</span>
-                </v-tooltip>
+            <template #title>
+              <div class="d-flex align-center">
+                <span class="text-body-2 font-weight-medium text-truncate">
+                  {{ expense.description || "Sem descrição" }}
+                </span>
+                <v-chip
+                  v-if="expense.installments && expense.installments > 1"
+                  size="x-small"
+                  color="primary"
+                  variant="tonal"
+                  class="ms-2 flex-shrink-0"
+                >
+                  {{ expense.installments }}x
+                </v-chip>
               </div>
-            </v-list-item-title>
+            </template>
 
-            <v-list-item-subtitle class="text-caption text-medium-emphasis text-truncate">
-              {{ expense.description || 'Sem descrição' }}
-            </v-list-item-subtitle>
+            <template #subtitle>
+              <div class="d-flex align-center flex-wrap mt-1">
+                <div class="d-flex align-center me-3">
+                  <v-icon size="14" class="me-1">mdi-calendar</v-icon>
+                  <span class="text-caption">{{
+                    formatDate(expense.date)
+                  }}</span>
+                </div>
+                <div class="d-flex align-center">
+                  <v-icon size="14" class="me-1">mdi-tag</v-icon>
+                  <span class="text-caption text-truncate">{{
+                    getCategoryName(expense.categoryId)
+                  }}</span>
+                </div>
+              </div>
+            </template>
 
             <template #append>
               <div class="d-flex align-center">
-                <span class="font-weight-bold" :style="{ color: amountColor(expense.value) }">
-                  R$ {{ expense.value.toFixed(2) }}
+                <span
+                  class="text-body-2 font-weight-medium"
+                  :class="[
+                    `text-${amountColor(expense.value)}`,
+                    { 'text-no-wrap': !$vuetify.display.smAndDown },
+                  ]"
+                >
+                  {{ formatCurrency(expense.value) }}
                 </span>
-                <v-menu offset-x>
-                  <template v-slot:activator="{ props }">
+                <v-menu offset-y>
+                  <template #activator="{ props: menuProps }">
                     <v-btn
-                      v-bind="props"
+                      v-bind="menuProps"
                       icon
                       variant="text"
                       size="x-small"
                       class="ml-1"
-                      color="grey"
+                      @click.stop
                     >
-                      <v-icon size="18">mdi-dots-vertical</v-icon>
+                      <v-icon :size="$vuetify.display.smAndDown ? 16 : 18"
+                        >mdi-dots-vertical</v-icon
+                      >
                     </v-btn>
                   </template>
                   <v-list density="compact">
                     <v-list-item @click="openEditDialog(expense)">
-                      <template v-slot:prepend>
+                      <template #prepend>
                         <v-icon size="small" class="me-2">mdi-pencil</v-icon>
                       </template>
                       <v-list-item-title>Editar</v-list-item-title>
                     </v-list-item>
                     <v-list-item @click="openDeleteDialog(expense.id)">
-                      <template v-slot:prepend>
+                      <template #prepend>
                         <v-icon size="small" class="me-2">mdi-delete</v-icon>
                       </template>
                       <v-list-item-title>Excluir</v-list-item-title>
@@ -153,17 +203,23 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useTheme } from "vuetify";
-import { parseISO, format } from "date-fns";
+import { parseISO, format, getDaysInMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import EditNumberDialog from "../dialogs/EditNumberDialog.vue";
-import { useExpensesStore } from "~/stores/useExpensesStore";
-import { useCategoriesStore } from "#imports";
 import type { Expense, UpdateExpensePayload } from "~/types/expense";
+import { useExpensesStore } from "~/stores/useExpensesStore";
+import { useCategoriesStore } from "~/stores/useCategoriesStore";
+import EditNumberDialog from "~/components/dialogs/EditNumberDialog.vue";
 
 const expensesStore = useExpensesStore();
 const categoriesStore = useCategoriesStore();
 
-const expenses = computed(() => expensesStore.expenses);
+const themeColors = {
+  primary: "primary",
+  success: "success",
+  error: "error",
+} as const;
+
+type ThemeColorValue = (typeof themeColors)[keyof typeof themeColors];
 
 const editDialog = ref(false);
 const editingExpense = ref<Expense | null>(null);
@@ -197,8 +253,8 @@ async function handleExpenseUpdate(updatedExpense: Expense) {
 const deleteDialog = ref(false);
 const expenseIdToDelete = ref<string | null>(null);
 
-function openDeleteDialog(id: string) {
-  expenseIdToDelete.value = id;
+function openDeleteDialog(expenseId: string): void {
+  expenseIdToDelete.value = expenseId;
   deleteDialog.value = true;
 }
 
@@ -219,61 +275,48 @@ async function confirmDelete() {
   cancelDelete();
 }
 
-const theme = useTheme();
-const themeColors = computed(() => theme.current.value.colors);
-
 function formatDate(dateStr: string) {
   try {
     return format(parseISO(dateStr), "dd MMM yyyy", { locale: ptBR });
-  } catch {
+  } catch (error) {
+    console.warn(`Failed to parse date: ${dateStr}. Error: ${error}`);
     return dateStr;
   }
 }
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat('pt-BR', { 
-    style: 'currency', 
-    currency: 'BRL',
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   }).format(value);
 }
 
-function calculateMonthlyTotal(expenses: any[]) {
+function calculateMonthlyTotal(expenses: Expense[]) {
   return expenses.reduce((total, expense) => total + expense.value, 0);
 }
 
-function calculateDailyAverage(expenses: any[]) {
+function calculateDailyAverage(expenses: Expense[]) {
   if (expenses.length === 0) return 0;
-  
-  const dailyTotals: Record<string, number> = {};
-  
-  expenses.forEach(expense => {
-    const date = format(parseISO(expense.date), 'yyyy-MM-dd');
-    if (!dailyTotals[date]) {
-      dailyTotals[date] = 0;
-    }
-    dailyTotals[date] += expense.value;
-  });
-  
-  const totalDays = Object.keys(dailyTotals).length;
-  if (totalDays === 0) return 0;
-  
+
+  const firstExpenseDate = parseISO(expenses[0].date);
+  const year = firstExpenseDate.getFullYear();
+  const month = firstExpenseDate.getMonth();
+
+  const numberOfDaysInMonth = getDaysInMonth(new Date(year, month));
+
   const monthlyTotal = calculateMonthlyTotal(expenses);
-  return monthlyTotal / totalDays;
+  return monthlyTotal / numberOfDaysInMonth;
 }
 
-function getCategoryName(categoryId: string | undefined): string {
-  if (!categoryId) {
-    console.warn(
-      'getCategoryName: categoryId is undefined or null. Defaulting to "Desconhecida".'
-    );
-    return "Desconhecida";
-  }
+const getCategoryName = (categoryId: string | undefined): string => {
+  if (!categoryId) return "Sem categoria";
+
   const trimmedCategoryId = categoryId.trim();
 
-  const category = categoriesStore.categories.find((c) => {
-    const trimmedStoredCategoryId = c.id?.trim();
+  const category = categoriesStore.categories.find((c: { id?: string }) => {
+    const trimmedStoredCategoryId = c.id?.trim() || "";
     return trimmedStoredCategoryId === trimmedCategoryId;
   });
 
@@ -281,12 +324,15 @@ function getCategoryName(categoryId: string | undefined): string {
     console.warn(
       `getCategoryName: Category not found for ID: "${trimmedCategoryId}". ` +
         `Available categories in store:`,
-      categoriesStore.categories.map((c) => ({ id: c.id, name: c.name }))
+      categoriesStore.categories.map((c: { id?: string; name: string }) => ({
+        id: c.id,
+        name: c.name,
+      }))
     );
     return "Desconhecida";
   }
   return category.name;
-}
+};
 
 function getCategoryIcon(categoryId: string | undefined) {
   const categoryName = getCategoryName(categoryId);
@@ -303,24 +349,24 @@ function getCategoryIcon(categoryId: string | undefined) {
       return "mdi-cash-multiple";
     case "carro":
       return "mdi-car";
-    case "farmaciaaaaaaaaaaaaaaa":
+    case "farmácia":
       return "mdi-medical-bag";
     default:
       return "mdi-currency-usd";
   }
 }
 
-function getCategoryColor(categoryId: string | undefined): string {
-  return themeColors.value.primary;
+function getCategoryColor(categoryId: string | undefined): ThemeColorValue {
+  return themeColors.primary;
 }
 
-function amountColor(value: number) {
-  return value <= 0 ? themeColors.value.success : themeColors.value.error;
+function amountColor(value: number): ThemeColorValue {
+  return value <= 0 ? themeColors.success : themeColors.error;
 }
 
 const groupedExpenses = computed(() => {
   const groups: Record<string, Expense[]> = {};
-  expenses.value.forEach((expense) => {
+  expensesStore.expenses.forEach((expense: Expense) => {
     const date = parseISO(expense.date);
     const key = format(date, "yyyy-MM");
     if (!groups[key]) groups[key] = [];
@@ -353,13 +399,52 @@ onMounted(() => {
 
 <style scoped>
 .expense-panel-wrapper {
-  max-width: 900px;
-  margin: 8px auto;
+  max-width: 100%;
+  margin: 0 auto;
+  width: 100%;
 }
 
-:deep(.v-expansion-panel-title) {
-  min-height: 40px !important;
-  padding: 0 12px !important;
+/* Mobile styles */
+@media (max-width: 960px) {
+  .mobile-panel {
+    margin: 4px 0;
+  }
+
+  .mobile-panel .v-expansion-panel-title {
+    min-height: 48px;
+    padding: 0 12px;
+  }
+
+  .mobile-panel .v-expansion-panel-text__wrapper {
+    padding: 8px 4px;
+  }
+
+  .mobile-item {
+    padding: 8px 4px !important;
+  }
+
+  .mobile-item .v-list-item__prepend {
+    margin-right: 8px !important;
+  }
+
+  .mobile-item .v-list-item-title {
+    font-size: 0.8125rem !important;
+    line-height: 1.25;
+  }
+
+  .mobile-item .v-list-item-subtitle {
+    font-size: 0.75rem !important;
+    margin-top: 2px;
+  }
+
+  .mobile-item .v-avatar {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .mobile-item .v-avatar .v-icon {
+    font-size: 16px !important;
+  }
 }
 
 :deep(.v-expansion-panel-text__wrapper) {
@@ -394,5 +479,29 @@ onMounted(() => {
 .v-list-item-subtitle {
   opacity: 0.8;
   font-size: 0.7rem !important;
+}
+
+@media (max-width: 600px) {
+  .v-expansion-panel-title .d-flex {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  .v-expansion-panel-title .d-flex .d-flex.align-center {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .v-expansion-panel-title .d-flex .d-flex:last-child {
+    margin-left: 0 !important;
+    margin-top: 4px;
+  }
+  .expense-item-card {
+    padding: 8px 10px !important;
+  }
+  .v-list-item-title {
+    font-size: 0.85rem !important;
+  }
+  .v-list-item-subtitle {
+    font-size: 0.65rem !important;
+  }
 }
 </style>

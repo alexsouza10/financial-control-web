@@ -37,7 +37,7 @@ export default defineNuxtConfig({
   // Configuração de tempo de execução
   runtimeConfig: {
     public: {
-      apiBase: process.env.API_BASE_URL || 'http://localhost:7000/api',
+      apiBase: process.env.API_BASE_URL || 'http://localhost:7001/api',
     },
   },
 

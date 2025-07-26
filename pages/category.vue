@@ -133,16 +133,22 @@
       v-model="showSnackbar"
       :color="snackbarColor"
       timeout="3000"
-      location="bottom right"
+      location="top right"
       rounded="pill"
+      class="mt-4"
     >
-      {{ snackbarMessage }}
+      <div class="d-flex align-center">
+        <v-icon v-if="snackbarColor === 'success'" class="me-2">mdi-check-circle</v-icon>
+        <v-icon v-else-if="snackbarColor === 'error'" class="me-2">mdi-alert-circle</v-icon>
+        <span>{{ snackbarMessage }}</span>
+      </div>
       <template #actions>
         <v-btn
           color="white"
           variant="text"
           @click="showSnackbar = false"
           icon="mdi-close"
+          size="small"
         ></v-btn>
       </template>
     </v-snackbar>
@@ -229,11 +235,6 @@ const confirmDelete = (id, name) => {
   categoryToDeleteName.value = name;
   showDeleteConfirm.value = true; // Abre o DeleteDialog
 };
-
-// `cancelDelete` agora é implicitamente manipulado pelo `v-model` do DeleteDialog
-// quando o usuário clica em "Cancelar" ou fora do modal.
-// Não precisamos mais de uma função `cancelDelete` explícita aqui,
-// o `v-model` já cuida do `showDeleteConfirm.value = false`.
 
 const deleteCategory = async () => {
   deleting.value = true; // Ativa o loading no botão do DeleteDialog

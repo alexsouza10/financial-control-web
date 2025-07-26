@@ -6,9 +6,9 @@
     </v-card-title>
 
     <v-card-text>
-      <v-form @submit.prevent="addExpense">
+      <v-form ref="expenseForm" @submit.prevent="submitExpense" validate-on="submit">
         <v-row>
-          <v-col cols="12" md="6">
+          <v-col cols="12" sm="6">
             <v-select
               v-model="selectedCategory"
               :items="categoryItems"
@@ -17,83 +17,79 @@
               label="Categoria"
               variant="outlined"
               density="compact"
-              :rules="[(v) => !!v || 'Escolha uma categoria']"
+              :rules="categoryRules"
               required
               :loading="categoriesLoading"
               :disabled="categoriesLoading"
             />
           </v-col>
 
-          <v-col cols="12" md="6">
+          <v-col cols="12" sm="6">
             <v-text-field
               v-model="formattedValue"
-              @input="formatInput"
-              @blur="handleBlur"
-              @click:clear="handleClear"
+              @input="formatCurrencyInput"
+              @blur="handleCurrencyBlur"
+              @click:clear="handleCurrencyClear"
               label="Valor Total (R$)"
               variant="outlined"
               clearable
               density="compact"
-              :rules="[(v) => {
-                if (!v) return 'Campo obrigatório';
-                const num = parseFloat(v?.replace(/\./g, '').replace(',', '.') || '0');
-                return num > 0 || 'Valor deve ser positivo';
-              }]"
+              :rules="totalValueRules"
               required
             />
           </v-col>
 
-          <v-col cols="12" md="6">
+          <v-col cols="12" sm="6">
             <v-select
-              v-model="paymentMethod"
+              v-model="selectedPaymentMethod"
               :items="paymentMethods"
               label="Método de Pagamento"
               variant="outlined"
               density="compact"
               required
-              :rules="[(v) => !!v || 'Escolha um método de pagamento']"
+              :rules="paymentMethodRules"
             />
           </v-col>
 
-          <v-col cols="12" md="6">
+          <v-col cols="12" sm="6">
             <DatePickerField
-              v-model="editedExpenseDate"
+              v-model="selectedExpenseDate"
               label="Data"
               density="compact"
-              :rules="[(v) => !!v || 'Data obrigatória']"
+              :rules="dateRules"
               required
             />
           </v-col>
 
-          <v-col cols="12" md="6" v-if="paymentMethod === 'Cartão de Crédito'">
+          <v-col cols="12" sm="6" v-if="isCreditCardPayment">
             <v-text-field
-              v-model.number="installments"
+              v-model.number="numberOfInstallments"
               label="Número de Parcelas"
               type="number"
               min="1"
               variant="outlined"
               density="compact"
-              :rules="[(v) => v >= 1 || 'Deve ter pelo menos 1 parcela']"
+              :rules="installmentRules"
               required
             />
           </v-col>
 
-          <v-col cols="12" md="6" v-if="paymentMethod === 'Cartão de Crédito'">
+          <v-col cols="12" sm="6" v-if="isCreditCardPayment">
             <v-select
               v-model="selectedCard"
-              :items="cards"
+              :items="cardOptions"
               label="Cartão"
               variant="outlined"
               density="compact"
-              :rules="[(v) => !!v || 'Escolha um cartão']"
+              :rules="cardRules"
               required
             />
           </v-col>
 
-          <v-col cols="12" :md="paymentMethod === 'Cartão de Crédito' ? 6 : 12">
+          <v-col cols="12" :sm="isCreditCardPayment ? 6 : 12">
             <v-text-field
               label="Valor de Cada Parcela (R$)"
-              :model-value="formatCurrency(installmentValue)"
+              :model-value="formattedInstallmentValue"
               readonly
               variant="outlined"
               density="compact"
@@ -105,7 +101,7 @@
               type="submit"
               color="primary"
               class="mt-2"
-              :loading="savingExpense"
+              :loading="isSavingExpense"
             >
               <v-icon left>mdi-content-save</v-icon>
               Salvar Gasto
@@ -114,6 +110,34 @@
         </v-row>
       </v-form>
     </v-card-text>
+
+    <v-snackbar
+      v-model="showSnackbar"
+      :color="snackbarColor"
+      timeout="3000"
+      location="top right"
+      rounded="pill"
+      class="mt-4"
+    >
+      <div class="d-flex align-center">
+        <v-icon v-if="snackbarColor === 'success'" class="me-2"
+          >mdi-check-circle</v-icon
+        >
+        <v-icon v-else-if="snackbarColor === 'error'" class="me-2"
+          >mdi-alert-circle</v-icon
+        >
+        <span>{{ snackbarMessage }}</span>
+      </div>
+      <template #actions>
+        <v-btn
+          color="white"
+          variant="text"
+          @click="showSnackbar = false"
+          icon="mdi-close"
+          size="small"
+        ></v-btn>
+      </template>
+    </v-snackbar>
   </v-card>
 </template>
 
@@ -125,61 +149,31 @@ import { useNuxtApp } from "#app";
 import { addMonths, parseISO, format } from "date-fns";
 import type { CreateExpensePayload } from "~/types/expense";
 
+// --- State Variables ---
 const expensesStore = useExpensesStore();
 const { $api } = useNuxtApp();
 
-const totalValue = ref(0);
-const formattedValue = ref('');
+const expenseForm = ref(null);
 
-const formatInput = (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  let value = input.value.replace(/\D/g, '');
-  
-  // Remove leading zeros
-  value = value.replace(/^0+/, '');
-  
-  if (value === '') {
-    formattedValue.value = '';
-    totalValue.value = 0;
-    return;
-  }
-  
-  // Convert to number and format with 2 decimal places
-  const numberValue = parseInt(value) / 100;
-  totalValue.value = numberValue;
-  
-  // Format with thousands separator and 2 decimal places
-  formattedValue.value = numberValue.toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-};
+const rawTotalValue = ref(0);
+const formattedValue = ref("");
 
-const formatCurrency = (value: number) => {
-  return value.toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-};
-
-const handleBlur = () => {
-  if (totalValue.value === 0) {
-    formattedValue.value = '';
-  } else {
-    formattedValue.value = formatCurrency(totalValue.value);
-  }
-};
-
-const handleClear = () => {
-  totalValue.value = 0;
-  formattedValue.value = '';
-};
-const paymentMethod = ref("");
-const installments = ref(1);
+const selectedPaymentMethod = ref("");
+const numberOfInstallments = ref(1);
 const selectedCategory = ref(null);
-const editedExpenseDate = ref(new Date().toISOString().split("T")[0]);
+const selectedExpenseDate = ref(new Date().toISOString().split("T")[0]);
 const selectedCard = ref("");
 
+// Snackbar
+const showSnackbar = ref(false);
+const snackbarMessage = ref("");
+const snackbarColor = ref("success");
+
+const categories = ref([]);
+const categoriesLoading = ref(false);
+const isSavingExpense = ref(false);
+
+// --- Constants ---
 const paymentMethods = [
   "Cartão de Crédito",
   "Débito",
@@ -188,12 +182,9 @@ const paymentMethods = [
   "Boleto",
 ];
 
-const cards = ["Nubank", "Hipercard", "Santander", "Outro"];
+const cardOptions = ["Nubank", "Hipercard", "Santander", "Outro"];
 
-const categories = ref([]);
-const categoriesLoading = ref(false);
-const savingExpense = ref(false);
-
+// --- Computed Properties ---
 const categoryItems = computed(() => {
   return categories.value.map((cat) => ({
     id: cat.id,
@@ -201,16 +192,88 @@ const categoryItems = computed(() => {
   }));
 });
 
-const installmentValue = computed(() =>
-  installments.value > 0 ? totalValue.value / installments.value : 0
+const isCreditCardPayment = computed(
+  () => selectedPaymentMethod.value === "Cartão de Crédito"
 );
 
-watch(paymentMethod, (newMethod) => {
+const installmentValue = computed(() =>
+  numberOfInstallments.value > 0 ? rawTotalValue.value / numberOfInstallments.value : 0
+);
+
+const formattedInstallmentValue = computed(() =>
+  formatCurrency(installmentValue.value)
+);
+
+// --- Validation Rules ---
+const categoryRules = [(v: any) => !!v || 'Escolha uma categoria'];
+const paymentMethodRules = [(v: any) => !!v || 'Escolha um método de pagamento'];
+const dateRules = [(v: any) => !!v || 'Data obrigatória'];
+const installmentRules = [(v: any) => v >= 1 || 'Deve ter pelo menos 1 parcela'];
+const cardRules = [(v: any) => !!v || 'Escolha um cartão'];
+const totalValueRules = [
+  (v: string) => {
+    if (!v) return 'Campo obrigatório';
+    const num = parseFloat(v?.replace(/\./g, '').replace(',', '.') || '0');
+    return num > 0 || 'Valor deve ser positivo';
+  }
+];
+
+// --- Watchers ---
+watch(selectedPaymentMethod, (newMethod) => {
   if (newMethod !== "Cartão de Crédito") {
-    installments.value = 1;
+    numberOfInstallments.value = 1;
     selectedCard.value = "";
   }
 });
+
+// --- Functions ---
+
+const formatCurrencyInput = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  let value = input.value.replace(/\D/g, "");
+
+  value = value.replace(/^0+/, "");
+
+  if (value === "") {
+    formattedValue.value = "";
+    rawTotalValue.value = 0;
+    return;
+  }
+
+  const numberValue = parseInt(value) / 100;
+  rawTotalValue.value = numberValue;
+
+  formattedValue.value = numberValue.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
+const formatCurrency = (value: number) => {
+  return value.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
+const handleCurrencyBlur = () => {
+  if (rawTotalValue.value === 0) {
+    formattedValue.value = "";
+  } else {
+    formattedValue.value = formatCurrency(rawTotalValue.value);
+  }
+};
+
+const handleCurrencyClear = () => {
+  rawTotalValue.value = 0;
+  formattedValue.value = "";
+};
+
+const showFeedback = (color: string, message: string) => {
+  snackbarColor.value = color;
+  snackbarMessage.value = message;
+  showSnackbar.value = true;
+};
 
 const fetchCategories = async () => {
   categoriesLoading.value = true;
@@ -219,29 +282,44 @@ const fetchCategories = async () => {
     categories.value = response.data;
   } catch (error) {
     console.error("Erro ao buscar categorias:", error);
+    showFeedback(
+      "error",
+      "Erro ao carregar categorias. Tente recarregar a página."
+    );
   } finally {
     categoriesLoading.value = false;
   }
 };
 
-async function addExpense() {
-  if (
-    !paymentMethod.value ||
-    totalValue.value <= 0 ||
-    installments.value < 1 ||
-    !selectedCategory.value ||
-    !editedExpenseDate.value ||
-    (paymentMethod.value === "Cartão de Crédito" && !selectedCard.value)
-  ) {
-    alert("Por favor, preencha todos os campos corretamente!");
+const resetForm = () => {
+  rawTotalValue.value = 0;
+  formattedValue.value = "";
+  selectedPaymentMethod.value = "";
+  numberOfInstallments.value = 1;
+  selectedCategory.value = null;
+  selectedExpenseDate.value = new Date().toISOString().split("T")[0];
+  selectedCard.value = "";
+  if (expenseForm.value) {
+    (expenseForm.value as any).resetValidation();
+  }
+};
+
+async function submitExpense() {
+  const { valid } = await (expenseForm.value as any).validate();
+
+  if (!valid) {
+    showFeedback(
+      "error",
+      "Por favor, preencha todos os campos obrigatórios corretamente."
+    );
     return;
   }
 
-  savingExpense.value = true;
+  isSavingExpense.value = true;
   try {
-    const total = totalValue.value;
-    const installmentsCount = installments.value;
-    const initialDate = parseISO(editedExpenseDate.value);
+    const total = rawTotalValue.value;
+    const installmentsCount = numberOfInstallments.value;
+    const initialDate = parseISO(selectedExpenseDate.value);
 
     const expensesToRegister: CreateExpensePayload[] = [];
     const installmentAmount = total / installmentsCount;
@@ -256,40 +334,32 @@ async function addExpense() {
       expensesToRegister.push({
         categoryId: selectedCategory.value as string,
         value: installmentAmount,
-        paymentMethod: paymentMethod.value,
+        paymentMethod: selectedPaymentMethod.value,
         card: selectedCard.value,
-        installments: 1, 
+        installments: 1, // Each entry represents one installment
         date: formattedDateForBackend,
       });
     }
-
-    console.log("Despesas a serem registradas:", expensesToRegister);
 
     await Promise.all(
       expensesToRegister.map((expense) => expensesStore.addExpense(expense))
     );
 
-    totalValue.value = 0;
-    paymentMethod.value = "";
-    installments.value = 1;
-    selectedCategory.value = null;
-    editedExpenseDate.value = new Date().toISOString().split("T")[0];
-    selectedCard.value = "";
-
-    alert("Gasto(s) adicionado(s) com sucesso!");
+    resetForm();
+    showFeedback("success", "Gasto(s) adicionado(s) com sucesso!");
   } catch (error) {
     console.error("Erro ao adicionar gasto:", error);
-    alert("Erro ao adicionar gasto. Verifique o console.");
+    showFeedback("error", "Erro ao adicionar gasto. Tente novamente.");
   } finally {
-    savingExpense.value = false;
+    isSavingExpense.value = false;
   }
 }
 
+// --- Lifecycle Hooks ---
 onMounted(() => {
   fetchCategories();
 });
 </script>
 
 <style scoped>
-/* Estilos existentes aqui */
 </style>

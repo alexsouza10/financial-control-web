@@ -1,16 +1,14 @@
 <template>
-  <v-app :theme="theme">
+  <v-app :theme="theme" style="min-height: 100vh; display: flex; flex-direction: column;">
     <AppHeader @logout="handleLogout" @toggle-theme="toggleTheme" />
 
-    <v-main>
-      <v-container fluid class="pa-4">
+    <v-main style="flex: 1 0 auto;"> <v-container fluid class="pa-4">
         <NuxtRouteAnnouncer />
         <NuxtPage />
       </v-container>
     </v-main>
 
-    <AppFooter />
-  </v-app>
+    <AppFooter style="flex-shrink: 0;" /> </v-app>
 </template>
 
 <script setup>

@@ -161,7 +161,7 @@
               <div>
                 <div class="text-subtitle-2 mb-1">{{ stat.title }}</div>
                 <div class="text-h5 font-weight-bold">
-                  {{ formatCurrency(stat.value) }}
+                  {{ stat.valueFormatter ? stat.valueFormatter(stat.value) : formatCurrency(stat.value) }}
                 </div>
                 <div
                   v-if="stat.change !== undefined"
@@ -173,10 +173,9 @@
                   >
                     {{ stat.change >= 0 ? "mdi-arrow-up" : "mdi-arrow-down" }}
                   </v-icon>
-                  <span class="ml-1"
-                    >{{ Math.abs(stat.change) }}% em relação ao período
-                    anterior</span
-                  >
+                  <span class="ml-1">
+                    {{ Math.abs(stat.change) }}% {{ stat.changeLabel || 'em relação ao período anterior' }}
+                  </span>
                 </div>
               </div>
               <v-avatar :color="stat.iconColor" size="48" class="elevation-4">
@@ -189,71 +188,89 @@
     </v-row>
 
     <v-row class="mb-6">
-      <v-col cols="12" md="8">
-        <v-card height="100%" class="pa-4">
-          <v-card-title class="text-h6"
-            >Despesas ao Longo do Tempo</v-card-title
-          >
-          <v-card-text>
+      <v-col cols="12" md="8" class="d-flex">
+        <v-card class="d-flex flex-column flex-grow-1">
+          <v-card-title class="text-h6 py-4 px-4">
+            Despesas ao Longo do Tempo
+          </v-card-title>
+          <v-divider></v-divider>
+          <div class="flex-grow-1 pa-4" style="min-height: 400px;">
             <ExpenseLineChart
               :data="lineChartData"
               :group-by="groupBy"
-              :height="300"
+              :height="400"
+              class="w-100"
             />
-          </v-card-text>
+          </div>
         </v-card>
       </v-col>
-      <v-col cols="12" md="4">
-        <v-card height="100%" class="pa-4">
-          <v-card-title class="text-h6"
-            >Distribuição por Categoria</v-card-title
-          >
-          <v-card-text>
-            <CategoryPieChart :data="pieChartData" :height="300" />
-          </v-card-text>
+      <v-col cols="12" md="4" class="d-flex">
+        <v-card class="d-flex flex-column flex-grow-1">
+          <v-card-title class="text-h6 py-4 px-4">
+            Distribuição por Categoria
+          </v-card-title>
+          <v-divider></v-divider>
+          <div class="flex-grow-1 pa-4 d-flex align-center">
+            <CategoryPieChart :data="pieChartData" :height="350" class="w-100" />
+          </div>
         </v-card>
       </v-col>
     </v-row>
 
     <v-card class="mb-6">
-      <v-card-title class="d-flex align-center">
-        <span>Despesas por Categoria</span>
+      <v-card-title class="d-flex flex-wrap align-center">
+        <span class="text-subtitle-1 text-sm-h6">Despesas por Categoria</span>
         <v-spacer></v-spacer>
         <v-btn
           variant="text"
           color="primary"
           size="small"
           @click="toggleCategoryTable"
+          class="mt-1 mt-sm-0"
         >
           {{ showCategoryTable ? "Ocultar Detalhes" : "Mostrar Detalhes" }}
-          <v-icon right>{{
-            showCategoryTable ? "mdi-chevron-up" : "mdi-chevron-down"
-          }}</v-icon>
+          <v-icon right>{{ showCategoryTable ? "mdi-chevron-up" : "mdi-chevron-down" }}</v-icon>
         </v-btn>
       </v-card-title>
       <v-expand-transition>
         <div v-show="showCategoryTable">
-          <v-card-text>
+          <v-card-text class="pa-2 pa-sm-4">
             <v-data-table
               :headers="categoryHeaders"
               :items="categoryBreakdown"
               :items-per-page="5"
               class="elevation-1"
+              :mobile-breakpoint="0"
+              :footer-props="{
+                'items-per-page-options': [5, 10, 15],
+                'items-per-page-text': 'Itens por página:'
+              }"
+              :header-props="{ sortIcon: 'mdi-arrow-up' }"
+              :hide-default-footer="categoryBreakdown.length <= 5"
             >
               <template v-slot:item.amount="{ item }">
-                {{ formatCurrency(item.amount) }}
+                <span class="text-no-wrap">{{ formatCurrency(item.amount) }}</span>
               </template>
               <template v-slot:item.percentage="{ item }">
-                <v-progress-linear
-                  :model-value="item.percentage"
-                  height="20"
-                  :color="getCategoryColor(item.category)"
-                  rounded
-                >
-                  <template v-slot:default="{ value }">
-                    <strong>{{ Math.ceil(value) }}%</strong>
-                  </template>
-                </v-progress-linear>
+                <div class="d-flex align-center">
+                  <span class="text-caption text-medium-emphasis mr-2 d-none d-sm-inline">{{ Math.ceil(item.percentage) }}%</span>
+                  <v-progress-linear
+                    :model-value="item.percentage"
+                    height="16"
+                    :color="getCategoryColor(item.category)"
+                    rounded
+                    class="flex-grow-1"
+                  >
+                    <template v-slot:default="{ value }" v-if="$vuetify.display.smAndDown">
+                      <strong class="text-caption">{{ Math.ceil(value) }}%</strong>
+                    </template>
+                  </v-progress-linear>
+                </div>
+              </template>
+              <template v-slot:no-data>
+                <div class="py-4 text-center text-medium-emphasis">
+                  Nenhuma despesa encontrada
+                </div>
               </template>
             </v-data-table>
           </v-card-text>
@@ -261,11 +278,30 @@
       </v-expand-transition>
     </v-card>
 
-    <v-card>
-      <v-card-title>Transações Recentes</v-card-title>
-      <v-card-text>
-        <ExpenseList :expenses="filteredExpenses" />
-      </v-card-text>
+    <v-card class="mb-6">
+      <v-card-title class="d-flex flex-wrap align-center">
+        <span class="text-subtitle-1 text-sm-h6">Transações Recentes</span>
+        <v-spacer></v-spacer>
+        <v-btn
+          variant="text"
+          color="primary"
+          size="small"
+          @click="toggleTransactionsTable"
+          class="mt-1 mt-sm-0"
+        >
+          {{ showTransactionsTable ? 'Ocultar Detalhes' : 'Mostrar Detalhes' }}
+          <v-icon right>{{ showTransactionsTable ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+        </v-btn>
+      </v-card-title>
+      <v-expand-transition>
+        <div v-show="showTransactionsTable">
+          <v-card-text class="pa-0 pa-sm-4">
+            <div class="expense-list-container">
+              <ExpenseList :expenses="filteredExpenses" />
+            </div>
+          </v-card-text>
+        </div>
+      </v-expand-transition>
     </v-card>
   </v-container>
 </template>
@@ -294,6 +330,7 @@ const categoriesStore = useCategoriesStore();
 // State
 const loading = ref(false);
 const showCategoryTable = ref(true);
+const showTransactionsTable = ref(true);
 const groupBy = ref<"day" | "week" | "month">("day");
 const selectedPeriod = ref("30d");
 const selectedCategory = ref<string | null>(null);
@@ -702,6 +739,7 @@ const summaryStats = computed(() => {
     (sum: number, exp: any) => sum + parseFloat(exp.value.toString()),
     0
   );
+  // Calculate previous period date range
   const previousPeriodExpenses = expensesStore.expenses.filter((expense) => {
     if (!startDate.value || !endDate.value) return false;
 
@@ -710,33 +748,42 @@ const summaryStats = computed(() => {
     const end = new Date(endDate.value).getTime();
 
     const periodLength = end - start;
-
     const prevStart = start - periodLength - 86400000;
     const prevEnd = start - 86400000;
 
     return expenseDate >= prevStart && expenseDate <= prevEnd;
   });
 
+  // Calculate previous period metrics
   const previousTotal = previousPeriodExpenses.reduce(
     (sum: number, exp: any) => sum + parseFloat(exp.value.toString()),
     0
   );
+  
+  const previousUniqueCategories = new Set(
+    previousPeriodExpenses
+      .map((e: any) => e.categoryId || e.category_id)
+      .filter(Boolean)
+  ).size;
 
-  const change =
-    previousTotal > 0
-      ? ((currentTotal - previousTotal) / previousTotal) * 100
-      : 0;
+  // Calculate percentage changes
+  const totalChange = previousTotal > 0
+    ? ((currentTotal - previousTotal) / previousTotal) * 100
+    : 0;
 
-  const avgPerDay =
-    currentPeriodExpenses.length > 0
-      ? currentTotal / (currentPeriodExpenses.length * 1.0)
-      : 0;
+  const avgPerDay = currentPeriodExpenses.length > 0
+    ? currentTotal / (currentPeriodExpenses.length * 1.0)
+    : 0;
+    
+  const uniqueCategoriesChange = previousPeriodExpenses.length > 0 && previousUniqueCategories > 0
+    ? ((new Set(currentPeriodExpenses.map((e) => e.categoryId || e.category_id).filter(Boolean)).size - previousUniqueCategories) / previousUniqueCategories) * 100
+    : 0;
 
   return [
     {
       title: "Total Gasto",
       value: currentTotal,
-      change: change,
+      change: parseFloat(totalChange.toFixed(1)), // Round to 1 decimal place
       icon: "mdi-cash-multiple",
       iconColor: "primary",
       color: "primary",
@@ -752,15 +799,23 @@ const summaryStats = computed(() => {
     {
       title: "Total de Despesas",
       value: currentPeriodExpenses.length,
-      change: 0,
+      valueFormatter: (val: number) => val.toString(), // Show as plain number
+      change: parseFloat(uniqueCategoriesChange.toFixed(1)),
+      changeLabel: 'em relação ao período anterior',
       icon: "mdi-receipt",
       iconColor: "info",
       color: "info",
     },
     {
       title: "Categorias Únicas",
-      value: new Set(currentPeriodExpenses.map((e) => e.category_id)).size,
-      change: 0,
+      value: new Set(
+        currentPeriodExpenses
+          .map((e) => e.categoryId || e.category_id)
+          .filter(Boolean) // Remove null/undefined values
+      ).size,
+      valueFormatter: (val: number) => val.toString(), // Show as plain number
+      change: parseFloat(uniqueCategoriesChange.toFixed(1)),
+      changeLabel: 'em relação ao período anterior',
       icon: "mdi-shape",
       iconColor: "orange",
       color: "orange-darken-2",
@@ -808,6 +863,10 @@ const toggleCategoryTable = () => {
   showCategoryTable.value = !showCategoryTable.value;
 };
 
+const toggleTransactionsTable = () => {
+  showTransactionsTable.value = !showTransactionsTable.value;
+};
+
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -852,9 +911,39 @@ onMounted(async () => {
 
 <style scoped>
 .analytics-dashboard {
-  padding: 16px;
-  max-width: 1400px;
+  max-width: 1440px;
   margin: 0 auto;
+  padding: 16px;
+}
+
+.expense-list-container {
+  max-height: 500px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* Custom scrollbar for webkit browsers */
+.expense-list-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.expense-list-container::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.expense-list-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+
+/* Responsive table styles */
+@media (max-width: 600px) {
+  .expense-list-container {
+    margin: 0 -16px;
+    max-width: 100vw;
+  }
 }
 
 .v-card {

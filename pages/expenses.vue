@@ -9,25 +9,16 @@
       Acompanhe seus gastos e mantenha suas finanças sob controle
     </p>
 
-    <!-- Summary Cards -->
     <section class="mb-6">
       <ExpenseSummary />
     </section>
 
-    <!-- Analytics Chart -->
-    <!-- <v-row class="mb-6" justify="center">
-      <v-col cols="12">
-        <AnalyticsChart />
-      </v-col>
-    </v-row> -->
-
-    <!-- Main Content -->
-    <v-row justify="center" class="mb-4" no-gutters>
-      <v-col cols="12" lg="5" class="pr-lg-3">
-        <ExpenseRegisterCard class="h-100" />
+    <v-row justify="center" class="mb-4" align="start">
+      <v-col cols="12" md="6" lg="5" class="pr-md-3 pb-4 pb-md-0">
+        <ExpenseRegisterCard />
       </v-col>
 
-      <v-col cols="12" lg="7" class="pl-lg-3 mt-4 mt-lg-0">
+      <v-col cols="12" md="6" lg="7" class="pl-md-3 pt-md-0">
         <ExpenseList />
       </v-col>
     </v-row>
@@ -39,7 +30,6 @@ import { onMounted } from "vue";
 import ExpenseSummary from "~/components/organisms/ExpenseSummary.vue";
 import ExpenseRegisterCard from "~/components/organisms/ExpenseRegisterCard.vue";
 import ExpenseList from "~/components/organisms/ExpenseList.vue";
-import AnalyticsChart from "~/components/organisms/AnalyticsChart.vue";
 
 import { useExpensesStore } from "~/stores/useExpensesStore";
 import { useCategoriesStore } from "~/stores/useCategoriesStore";
@@ -48,9 +38,10 @@ const expensesStore = useExpensesStore();
 const categoriesStore = useCategoriesStore();
 
 onMounted(() => {
-  categoriesStore.fetchAllCategories();
-  expensesStore.fetchExpenses();
-  expensesStore.fetchSalary();
+  categoriesStore.fetchAllCategories().then(() => {
+    expensesStore.fetchExpenses();
+    expensesStore.fetchSalary();
+  });
 });
 </script>
 
@@ -78,18 +69,10 @@ onMounted(() => {
   }
 }
 
-.v-col.d-flex {
-  display: flex;
-  flex-direction: column;
-}
-
 @media (max-width: 959px) {
   .expenses-page-container {
     padding-left: 16px;
     padding-right: 16px;
-  }
-  .v-col {
-    margin-bottom: 24px;
   }
 }
 
