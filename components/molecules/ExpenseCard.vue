@@ -172,7 +172,7 @@ const getAvatarColor = computed(() => {
 const progressColor = computed(() => {
   const title = props.title.toLowerCase();
   if (title.includes('saldo')) return 'warning';
-  if (title.includes('total')) return 'error';
+  if (title.includes('total') || title.includes('débito') || title.includes('debito')) return 'error';
   if (title.includes('salário') || title.includes('salario')) return 'success';
   return 'primary';
 });

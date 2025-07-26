@@ -4,7 +4,7 @@
       <ExpenseCard
         icon="mdi-cash-multiple"
         title="Total Gasto"
-        :value="expensesStore.totalExpenses"
+        :value="expensesStore.currentMonthExpenses"
         color="green darken-2"
         custom-class="bg-green-lighten-5"
       />
@@ -69,7 +69,7 @@ const expensesStore = useExpensesStore();
 const dialog = ref(false);
 
 const restante = computed(
-  () => expensesStore.salary - expensesStore.totalExpenses
+  () => expensesStore.salary - expensesStore.currentMonthExpenses
 );
 
 function openDialog() {

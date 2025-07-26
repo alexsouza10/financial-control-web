@@ -19,11 +19,11 @@
       <v-col cols="12" sm="4" class="pa-1">
         <ExpenseCard
           icon="mdi-cash-multiple"
-          title="Total do Mês"
+          title="Débito do Mês"
           :value="store.currentMonthExpenses"
           color="error"
           :max-value="store.salary || 1"
-          :custom-class="getExpenseCardClass('total')"
+          :custom-class="getExpenseCardClass('debito')"
         />
       </v-col>
       
@@ -86,15 +86,9 @@ function getExpenseCardClass(type: string) {
     } else {
       classes.push('bg-error-lighten-5');
     }
-  } else if (type === 'total') {
-    const percentage = (store.currentMonthExpenses / (store.salary || 1)) * 100;
-    if (percentage > 80) {
-      classes.push('bg-error-lighten-5');
-    } else if (percentage > 50) {
-      classes.push('bg-warning-lighten-5');
-    } else {
-      classes.push('bg-success-lighten-5');
-    }
+  } else if (type === 'debito') {
+    // Always apply error color for 'Débito do Mês' card
+    classes.push('bg-error-lighten-5');
   }
   
   return classes.join(' ');
