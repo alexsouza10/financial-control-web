@@ -8,7 +8,7 @@
       </v-container>
     </v-main>
 
-    <AppFooter style="flex-shrink: 0;" /> </v-app>
+  </v-app>
 </template>
 
 <script setup>
