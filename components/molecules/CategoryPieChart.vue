@@ -1,9 +1,8 @@
 <template>
-  <div class="category-pie-chart">
-    <Pie
-      :data="chartData"
-      :options="{ responsive: true, maintainAspectRatio: false }"
-    />
+  <div class="category-pie-chart-wrapper">
+    <div class="chart-container">
+      <Pie :data="chartData" :options="chartOptions" />
+    </div>
   </div>
 </template>
 
@@ -24,34 +23,51 @@ const props = defineProps<{
   title?: string;
 }>();
 
-const chartData = computed(() => {
-  return {
-    labels: props.data.map((d) => d.category),
-    datasets: [
-      {
-        label: props.title || "Expenses by Category",
-        data: props.data.map((d) => d.amount),
-        backgroundColor: [
-          "#f44336",
-          "#2196f3",
-          "#4caf50",
-          "#ff9800",
-          "#9c27b0",
-          "#00bcd4",
-          "#ffc107",
-          "#e91e63",
-          "#673ab7",
-          "#795548",
-        ],
-        hoverOffset: 4,
+const backgroundColors = [
+  "#f44336", "#2196f3", "#4caf50", "#ff9800", "#9c27b0",
+  "#00bcd4", "#ffc107", "#e91e63", "#673ab7", "#795548",
+];
+
+const chartData = computed(() => ({
+  labels: props.data.map(d => d.category),
+  datasets: [{
+    label: props.title || "Despesas por Categoria",
+    data: props.data.map(d => d.amount),
+    backgroundColor: backgroundColors,
+    hoverOffset: 10,
+  }],
+}));
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: true,
+      position: 'right',  // legenda ao lado direito do gráfico
+      align: 'start',
+      labels: {
+        boxWidth: 12,
+        padding: 12,
       },
-    ],
-  };
-});
+    },
+  },
+};
 </script>
+
 <style scoped>
-.category-pie-chart {
-  max-height: 400px;
-  width: 100%;
+.category-pie-chart-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+}
+
+.chart-container {
+  width: 500px; /* ajustar conforme necessário para caber legenda */
+  height: 360px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

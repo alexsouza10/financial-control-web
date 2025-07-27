@@ -188,31 +188,27 @@
     </v-row>
 
     <v-row class="mb-6">
-      <v-col cols="12" md="8" class="d-flex">
+      <v-col cols="12" md="6" class="d-flex">
         <v-card class="d-flex flex-column flex-grow-1">
           <v-card-title class="text-h6 py-4 px-4">
             Despesas ao Longo do Tempo
           </v-card-title>
           <v-divider></v-divider>
-          <div class="flex-grow-1 pa-4" style="min-height: 400px;">
             <ExpenseLineChart
               :data="lineChartData"
               :group-by="groupBy"
               :height="400"
               class="w-100"
             />
-          </div>
         </v-card>
       </v-col>
-      <v-col cols="12" md="4" class="d-flex">
+      <v-col cols="12" md="6" class="d-flex">
         <v-card class="d-flex flex-column flex-grow-1">
           <v-card-title class="text-h6 py-4 px-4">
             Distribuição por Categoria
           </v-card-title>
           <v-divider></v-divider>
-          <div class="flex-grow-1 pa-4 d-flex align-center">
             <CategoryPieChart :data="pieChartData" :height="350" class="w-100" />
-          </div>
         </v-card>
       </v-col>
     </v-row>
