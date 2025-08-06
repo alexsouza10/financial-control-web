@@ -9,6 +9,7 @@
 
 <script setup lang="ts">
 import { Line } from "vue-chartjs";
+import { useTheme } from "vuetify";
 import {
   Chart as ChartJS,
   Title,
@@ -21,7 +22,6 @@ import {
   Filler,
 } from "chart.js";
 import { computed, defineProps } from "vue";
-
 
 ChartJS.register(
   Title,
@@ -39,109 +39,206 @@ interface ExpenseDataPoint {
   amount: number;
 }
 
+const theme = useTheme();
+
 const props = defineProps<{
   data: ExpenseDataPoint[];
   title?: string;
 }>();
 
-// Aqui usamos CSS custom properties do Vuetify para cores
-const chartData = computed(() => ({
-  labels: props.data.map((d) => d.date),
-  datasets: [
-    {
-      label: props.title || "Expenses Over Time",
-      data: props.data.map((d) => d.amount),
-      fill: true,
-      borderColor: "#1E90FF",
-      backgroundColor: "rgba(30, 144, 255, 0.25)",
-      tension: 0.4,
-      pointBackgroundColor: "#1E90FF",
-      pointBorderColor: "#FFFFFF",
-      pointHoverBackgroundColor: "#FFFFFF",
-      pointHoverBorderColor: "#1E90FF",
-      pointRadius: 5,
-      pointHoverRadius: 7,
-      borderWidth: 3,
-    },
-  ],
-}));
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
+function parseColorToRgba(color: string, alpha: number): string {
+  color = color.trim();
+
+  if (color.startsWith("rgb")) {
+    const nums = color.match(/\d+/g);
+    if (nums && nums.length >= 3) {
+      const [r, g, b] = nums.map(Number);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+  }
+
+  if (color.startsWith("#")) {
+    let hex = color.slice(1);
+    if (hex.length === 3) {
+      hex = hex
+        .split("")
+        .map((char) => char + char)
+        .join("");
+    }
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  return `rgba(0,0,0,${alpha})`;
+}
+
+const chartData = computed(() => {
+  const isDark = theme.global.current.value.dark;
+
+  const primaryColor = isDark
+    ? "#42A5F5"
+    : getComputedStyle(document.documentElement)
+        .getPropertyValue("--v-theme-primary")
+        .trim() || "#1976D2";
+
+  return {
+    labels: props.data.map((d) => d.date),
+    datasets: [
+      {
+        label: props.title || "Gastos ao Longo do Tempo",
+        data: props.data.map((d) => d.amount),
+        fill: true,
+        borderColor: primaryColor,
+        backgroundColor: (context) => {
+          const ctx = context.chart.ctx;
+          const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+          gradient.addColorStop(0, parseColorToRgba(primaryColor, isDark ? 0.4 : 0.25));
+          gradient.addColorStop(1, parseColorToRgba(primaryColor, 0));
+          return gradient;
+        },
+        tension: 0.4,
+        pointBackgroundColor: primaryColor,
+        pointBorderColor: isDark ? "#1E1E1E" : "#FFFFFF",
+        pointHoverBackgroundColor: isDark ? "#1E1E1E" : "#FFFFFF",
+        pointHoverBorderColor: primaryColor,
+        pointRadius: isDark ? 5 : 4,
+        pointHoverRadius: isDark ? 7 : 6,
+        borderWidth: isDark ? 3 : 2,
+      },
+    ],
+  };
+});
+
+interface ChartOptions {
+  responsive: boolean;
+  maintainAspectRatio: boolean;
   interaction: {
-    mode: "nearest",
-    intersect: false,
-  },
+    mode: "nearest";
+    intersect: boolean;
+  };
   plugins: {
     legend: {
-      display: true,
-      position: "top",
+      display: boolean;
+      position: "top";
       labels: {
-        color: "var(--v-theme-on-surface)", // texto legenda
+        color: string;
         font: {
-          size: 14,
-          weight: "600",
-        },
-      },
-    },
+          size: number;
+        };
+        padding: number;
+      };
+    };
     tooltip: {
-      enabled: true,
-      backgroundColor: "var(--v-theme-primary)", // tooltip com cor do tema
-      titleFont: {
-        weight: "bold",
-      },
-      bodyFont: {
-        size: 14,
-      },
+      backgroundColor: string;
+      titleColor: string;
+      bodyColor: string;
+      borderColor: string;
+      borderWidth: number;
+      padding: number;
+      usePointStyle: boolean;
       callbacks: {
-        label: (context) =>
-          `R$ ${context.parsed.y.toFixed(2).replace(".", ",")}`,
-      },
-    },
-  },
+        label: (context: { parsed: { y: number } }) => string;
+      };
+    };
+  };
   scales: {
     x: {
       grid: {
-        display: false,
-      },
+        color: string;
+        drawBorder: boolean;
+      };
       ticks: {
-        color: "var(--v-theme-on-surface)", // cor do texto no eixo x
-        maxRotation: 45,
-        minRotation: 30,
-        maxTicksLimit: 8,
-      },
-      title: {
-        display: true,
-        text: "Date",
-        color: "var(--v-theme-on-surface)",
-        font: {
-          size: 14,
-          weight: "600",
-        },
-      },
-    },
+        color: string;
+      };
+    };
     y: {
       grid: {
-        color: "rgba(var(--v-theme-on-surface-rgb), 0.1)", // grade suave
-        borderDash: [5, 5],
-      },
+        color: string;
+        drawBorder: boolean;
+      };
       ticks: {
-        color: "var(--v-theme-on-surface)",
-        callback: (value: number) => `R$ ${value.toFixed(2).replace(".", ",")}`,
-      },
-      title: {
+        color: string;
+        callback: (value: string | number) => string;
+      };
+      beginAtZero: boolean;
+    };
+  };
+  elements: {
+    line: {
+      borderJoinStyle: "round";
+      borderCapStyle: "round";
+    };
+  };
+}
+
+const chartOptions = computed<ChartOptions>(() => {
+  const isDark = theme.global.current.value.dark;
+
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: "nearest",
+      intersect: false,
+    },
+    plugins: {
+      legend: {
         display: true,
-        text: "Amount (R$)",
-        color: "var(--v-theme-on-surface)",
-        font: {
-          size: 14,
-          weight: "600",
+        position: "top",
+        labels: {
+          color: isDark ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)",
+          font: {
+            size: 12,
+          },
+          padding: 20,
         },
       },
-      beginAtZero: true,
+      tooltip: {
+        backgroundColor: isDark ? "#424242" : "#FFFFFF",
+        titleColor: isDark ? "#FFFFFF" : "#000000",
+        bodyColor: isDark ? "#E0E0E0" : "#424242",
+        borderColor: isDark ? "#616161" : "#E0E0E0",
+        borderWidth: 1,
+        padding: 12,
+        usePointStyle: true,
+        callbacks: {
+          label: (context) =>
+            `R$ ${context.parsed.y.toFixed(2).replace(".", ",")}`,
+        },
+      },
     },
-  },
-};
+    scales: {
+      x: {
+        grid: {
+          color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+          drawBorder: false,
+        },
+        ticks: {
+          color: isDark ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)",
+        },
+      },
+      y: {
+        grid: {
+          color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+          drawBorder: false,
+        },
+        ticks: {
+          color: isDark ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)",
+          callback: (value) => `R$ ${value}`,
+        },
+        beginAtZero: true,
+      },
+    },
+    elements: {
+      line: {
+        borderJoinStyle: "round",
+        borderCapStyle: "round",
+      },
+    },
+  };
+});
 </script>
 
 <style scoped>
@@ -166,9 +263,5 @@ const chartOptions = {
   font-size: 1.25rem;
   text-align: center;
   user-select: none;
-}
-
-.chart-title {
-  color: var(--v-theme-on-surface);
 }
 </style>
