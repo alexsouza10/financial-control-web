@@ -55,7 +55,7 @@
             :key="expense.id"
             class="expense-item-card px-2 px-sm-3 py-2"
             :class="{ 'mobile-item': $vuetify.display.smAndDown }"
-            :title="expense.description || 'Sem descrição'"
+            :title="getCategoryName(expense.categoryId) || 'Sem categoria'"
             :subtitle="formatDate(expense.date)"
             :value="expense.id"
             nav
@@ -78,7 +78,7 @@
             <template #title>
               <div class="d-flex align-center">
                 <span class="text-body-2 font-weight-medium text-truncate">
-                  {{ expense.description || "Sem descrição" }}
+                  {{ getCategoryName(expense.categoryId) || "Sem categoria" }}
                 </span>
                 <v-chip
                   v-if="expense.installments && expense.installments > 1"

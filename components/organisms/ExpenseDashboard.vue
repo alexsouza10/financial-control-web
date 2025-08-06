@@ -1,9 +1,7 @@
 <template>
   <v-container fluid class="analytics-dashboard">
-    <!-- Header Section -->
     <v-card class="mb-6 pa-4 rounded-xl elevation-3">
       <v-row align="center" justify="space-between">
-        <!-- Título e Ícone -->
         <v-col cols="12" md="6" class="d-flex align-center">
           <v-icon color="primary" size="30" class="mr-3">
             mdi-chart-areaspline
@@ -15,29 +13,9 @@
             </div>
           </div>
         </v-col>
-
-        <!-- Botão Atualizar -->
-        <!-- <v-col cols="12" md="auto" class="d-flex justify-end">
-          <v-tooltip text="Atualizar dados">
-            <template #activator="{ props }">
-              <v-btn
-                v-bind="props"
-                variant="flat"
-                color="primary"
-                @click="refreshData"
-                :loading="loading"
-                class="text-capitalize"
-                prepend-icon="mdi-refresh"
-              >
-                Atualizar
-              </v-btn>
-            </template>
-          </v-tooltip>
-        </v-col> -->
       </v-row>
     </v-card>
 
-    <!-- Filters Row -->
     <v-card class="mb-6" elevation="2">
       <v-card-text>
         <v-row>
@@ -113,19 +91,6 @@
               ></v-date-picker>
             </v-menu>
           </v-col>
-          <!-- <v-col cols="12" md="3">
-            <v-select
-              v-model="selectedCategory"
-              :items="categoryOptions"
-              label="Categoria"
-              variant="outlined"
-              density="comfortable"
-              clearable
-              hide-details
-              item-title="text"
-              item-value="value"
-            ></v-select>
-          </v-col> -->
 
           <v-col cols="12" md="3">
             <v-select
@@ -161,7 +126,11 @@
               <div>
                 <div class="text-subtitle-2 mb-1">{{ stat.title }}</div>
                 <div class="text-h5 font-weight-bold">
-                  {{ stat.valueFormatter ? stat.valueFormatter(stat.value) : formatCurrency(stat.value) }}
+                  {{
+                    stat.valueFormatter
+                      ? stat.valueFormatter(stat.value)
+                      : formatCurrency(stat.value)
+                  }}
                 </div>
                 <div
                   v-if="stat.change !== undefined"
@@ -174,7 +143,8 @@
                     {{ stat.change >= 0 ? "mdi-arrow-up" : "mdi-arrow-down" }}
                   </v-icon>
                   <span class="ml-1">
-                    {{ Math.abs(stat.change) }}% {{ stat.changeLabel || 'em relação ao período anterior' }}
+                    {{ Math.abs(stat.change).toFixed(1) }}%
+                    {{ stat.changeLabel || "em relação ao período anterior" }}
                   </span>
                 </div>
               </div>
@@ -194,12 +164,12 @@
             Despesas ao Longo do Tempo
           </v-card-title>
           <v-divider></v-divider>
-            <ExpenseLineChart
-              :data="lineChartData"
-              :group-by="groupBy"
-              :height="400"
-              class="w-100"
-            />
+          <ExpenseLineChart
+            :data="lineChartData"
+            :group-by="groupBy"
+            :height="400"
+            class="w-100"
+          />
         </v-card>
       </v-col>
       <v-col cols="12" md="6" class="d-flex">
@@ -208,7 +178,7 @@
             Distribuição por Categoria
           </v-card-title>
           <v-divider></v-divider>
-            <CategoryPieChart :data="pieChartData" :height="350" class="w-100" />
+          <CategoryPieChart :data="pieChartData" :height="350" class="w-100" />
         </v-card>
       </v-col>
     </v-row>
@@ -225,7 +195,9 @@
           class="mt-1 mt-sm-0"
         >
           {{ showCategoryTable ? "Ocultar Detalhes" : "Mostrar Detalhes" }}
-          <v-icon right>{{ showCategoryTable ? "mdi-chevron-up" : "mdi-chevron-down" }}</v-icon>
+          <v-icon right>{{
+            showCategoryTable ? "mdi-chevron-up" : "mdi-chevron-down"
+          }}</v-icon>
         </v-btn>
       </v-card-title>
       <v-expand-transition>
@@ -239,17 +211,22 @@
               :mobile-breakpoint="0"
               :footer-props="{
                 'items-per-page-options': [5, 10, 15],
-                'items-per-page-text': 'Itens por página:'
+                'items-per-page-text': 'Itens por página:',
               }"
               :header-props="{ sortIcon: 'mdi-arrow-up' }"
               :hide-default-footer="categoryBreakdown.length <= 5"
             >
               <template v-slot:item.amount="{ item }">
-                <span class="text-no-wrap">{{ formatCurrency(item.amount) }}</span>
+                <span class="text-no-wrap">{{
+                  formatCurrency(item.amount)
+                }}</span>
               </template>
               <template v-slot:item.percentage="{ item }">
                 <div class="d-flex align-center">
-                  <span class="text-caption text-medium-emphasis mr-2 d-none d-sm-inline">{{ Math.ceil(item.percentage) }}%</span>
+                  <span
+                    class="text-caption text-medium-emphasis mr-2 d-none d-sm-inline"
+                    >{{ Math.ceil(item.percentage) }}%</span
+                  >
                   <v-progress-linear
                     :model-value="item.percentage"
                     height="16"
@@ -257,8 +234,13 @@
                     rounded
                     class="flex-grow-1"
                   >
-                    <template v-slot:default="{ value }" v-if="$vuetify.display.smAndDown">
-                      <strong class="text-caption">{{ Math.ceil(value) }}%</strong>
+                    <template
+                      v-slot:default="{ value }"
+                      v-if="$vuetify.display.smAndDown"
+                    >
+                      <strong class="text-caption"
+                        >{{ Math.ceil(value) }}%</strong
+                      >
                     </template>
                   </v-progress-linear>
                 </div>
@@ -285,8 +267,10 @@
           @click="toggleTransactionsTable"
           class="mt-1 mt-sm-0"
         >
-          {{ showTransactionsTable ? 'Ocultar Detalhes' : 'Mostrar Detalhes' }}
-          <v-icon right>{{ showTransactionsTable ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+          {{ showTransactionsTable ? "Ocultar Detalhes" : "Mostrar Detalhes" }}
+          <v-icon right>{{
+            showTransactionsTable ? "mdi-chevron-up" : "mdi-chevron-down"
+          }}</v-icon>
         </v-btn>
       </v-card-title>
       <v-expand-transition>
@@ -311,13 +295,27 @@ import ExpenseLineChart from "~/components/molecules/ExpenseLineChart.vue";
 import ExpenseList from "./ExpenseList.vue";
 import {
   format,
-  subMonths,
+  subDays,
   startOfMonth,
-  endOfMonth,
-  parseISO,
-  isWithinInterval,
+  subMonths,
+  startOfYear,
+  subYears,
+  getWeek,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+interface ExpenseWithCategory {
+  id: string;
+  date: string;
+  value: number;
+  description?: string;
+  paymentMethod?: string;
+  card?: string;
+  installments?: number;
+  categoryId?: string | null;
+  category_id?: string | null;
+  [key: string]: any;
+}
 
 // Stores
 const expensesStore = useExpensesStore();
@@ -335,13 +333,6 @@ const endDate = ref("");
 const startMenu = ref(false);
 const endMenu = ref(false);
 
-const today = new Date();
-const thirtyDaysAgo = new Date();
-thirtyDaysAgo.setDate(today.getDate() - 30);
-
-startDate.value = format(thirtyDaysAgo, "yyyy-MM-dd");
-endDate.value = format(today, "yyyy-MM-dd");
-
 const dateRanges = [
   { text: "Personalizado", value: "custom" },
   { text: "Últimos 7 dias", value: "7d" },
@@ -356,309 +347,168 @@ const dateRanges = [
   { text: "Ano anterior", value: "last_year" },
 ];
 
-// Watch for period changes
-watchEffect(() => {
-  if (selectedPeriod.value === "custom") return;
-
+// Funções para manipulação de datas
+const getDatesForPeriod = (period: string) => {
   const today = new Date();
-  const newStartDate = new Date();
+  let newStartDate = new Date(today);
+  let newEndDate = new Date(today);
 
-  switch (selectedPeriod.value) {
+  switch (period) {
     case "7d":
-      newStartDate.setDate(today.getDate() - 7);
+      newStartDate = subDays(today, 7);
       break;
     case "15d":
-      newStartDate.setDate(today.getDate() - 15);
+      newStartDate = subDays(today, 15);
       break;
     case "30d":
-      newStartDate.setDate(today.getDate() - 30);
+      newStartDate = subDays(today, 30);
       break;
     case "90d":
-      newStartDate.setMonth(today.getMonth() - 3);
+      newStartDate = subMonths(today, 3);
       break;
     case "180d":
-      newStartDate.setMonth(today.getMonth() - 6);
+      newStartDate = subMonths(today, 6);
       break;
     case "365d":
-      newStartDate.setFullYear(today.getFullYear() - 1);
+      newStartDate = subYears(today, 1);
       break;
     case "current_month":
-      newStartDate.setDate(1);
+      newStartDate = startOfMonth(today);
       break;
     case "last_month":
-      newStartDate.setMonth(today.getMonth() - 1);
-      newStartDate.setDate(1);
-      const lastDayOfLastMonth = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        0
-      );
-      endDate.value = format(lastDayOfLastMonth, "yyyy-MM-dd");
+      newStartDate = startOfMonth(subMonths(today, 1));
+      newEndDate = new Date(today.getFullYear(), today.getMonth(), 0);
       break;
     case "current_year":
-      newStartDate.setMonth(0, 1);
+      newStartDate = startOfYear(today);
       break;
     case "last_year":
-      newStartDate.setFullYear(today.getFullYear() - 1, 0, 1);
-      endDate.value = format(
-        new Date(today.getFullYear() - 1, 11, 31),
-        "yyyy-MM-dd"
-      );
-      return;
+      newStartDate = startOfYear(subYears(today, 1));
+      newEndDate = new Date(today.getFullYear() - 1, 11, 31);
+      break;
   }
-
-  if (!["last_month", "last_year"].includes(selectedPeriod.value)) {
-    endDate.value = format(today, "yyyy-MM-dd");
-  }
-
-  startDate.value = format(newStartDate, "yyyy-MM-dd");
-});
-
-watch([() => startDate.value, () => endDate.value], () => {
-  if (selectedPeriod.value === "custom") return;
-
-  const currentStart = startDate.value;
-  const currentEnd = endDate.value;
-
-  if (!currentStart || !currentEnd) return;
-
-  const today = new Date();
-  const startDateObj = new Date(currentStart);
-  const endDateObj = new Date(currentEnd);
-
-  const isSameDay = (d1: Date, d2: Date) => {
-    return (
-      d1.getFullYear() === d2.getFullYear() &&
-      d1.getMonth() === d2.getMonth() &&
-      d1.getDate() === d2.getDate()
-    );
+  return {
+    start: format(newStartDate, "yyyy-MM-dd"),
+    end: format(newEndDate, "yyyy-MM-dd"),
   };
+};
 
-  const createDate = (year: number, month: number, day: number) => {
-    return new Date(year, month, day, 0, 0, 0, 0);
-  };
-
-  type DayRange = { id: string; days: number };
-  type DateRange = { id: string; start: Date; end: Date };
-
-  const dayRanges: DayRange[] = [
-    { id: "7d", days: 7 },
-    { id: "15d", days: 15 },
-    { id: "30d", days: 30 },
-    { id: "90d", days: 90 },
-    { id: "180d", days: 180 },
-    { id: "365d", days: 365 },
-  ];
-
-  const dateRanges: DateRange[] = [
-    {
-      id: "current_month",
-      start: createDate(today.getFullYear(), today.getMonth(), 1),
-      end: createDate(today.getFullYear(), today.getMonth() + 1, 0),
-    },
-    {
-      id: "last_month",
-      start: createDate(today.getFullYear(), today.getMonth() - 1, 1),
-      end: createDate(today.getFullYear(), today.getMonth(), 0),
-    },
-    {
-      id: "current_year",
-      start: createDate(today.getFullYear(), 0, 1),
-      end: createDate(today.getFullYear(), 11, 31),
-    },
-    {
-      id: "last_year",
-      start: createDate(today.getFullYear() - 1, 0, 1),
-      end: createDate(today.getFullYear() - 1, 11, 31),
-    },
-  ];
-
-  for (const range of dayRanges) {
-    const rangeStart = new Date(today);
-    rangeStart.setDate(today.getDate() - range.days);
-
-    if (isSameDay(startDateObj, rangeStart) && isSameDay(endDateObj, today)) {
-      selectedPeriod.value = range.id;
-      return;
+// Efeito reativo para mudanças no período
+watch(
+  selectedPeriod,
+  (newPeriod) => {
+    if (newPeriod !== "custom") {
+      const { start, end } = getDatesForPeriod(newPeriod);
+      startDate.value = start;
+      endDate.value = end;
     }
-  }
-
-  for (const range of dateRanges) {
-    if (
-      isSameDay(startDateObj, range.start) &&
-      isSameDay(endDateObj, range.end)
-    ) {
-      selectedPeriod.value = range.id;
-      return;
-    }
-  }
-
-  selectedPeriod.value = "custom";
-});
+  },
+  { immediate: true }
+);
 
 const formattedStartDate = computed({
-  get() {
-    return startDate.value
+  get: () =>
+    startDate.value
       ? format(new Date(startDate.value), "dd/MM/yyyy", { locale: ptBR })
-      : "";
-  },
-  set(val: string) {
-    startDate.value = val;
+      : "",
+  set: (val: string) => {
+    if (selectedPeriod.value === "custom") {
+      startDate.value = val;
+    }
   },
 });
 
 const formattedEndDate = computed({
-  get() {
-    return endDate.value
+  get: () =>
+    endDate.value
       ? format(new Date(endDate.value), "dd/MM/yyyy", { locale: ptBR })
-      : "";
-  },
-  set(val: string) {
-    endDate.value = val;
+      : "",
+  set: (val: string) => {
+    if (selectedPeriod.value === "custom") {
+      endDate.value = val;
+    }
   },
 });
 
-// Categories
-const categoryOptions = computed(() => [
-  { text: "Todas as Categorias", value: null },
-  ...categoriesStore.categories.map((cat) => ({
-    text: cat.name,
-    value: cat.id.toString(),
-  })),
-]);
-
-type ExpenseWithCategory = {
-  id: string;
-  date: string;
-  value: number | string;
-  description?: string;
-  paymentMethod?: string;
-  card?: string;
-  installments?: number;
-  categoryId?: string | null;
-  category_id?: string | null;
-  [key: string]: any;
-};
-
+// Filters and Data
 const filteredExpenses = computed(() => {
-  if (!expensesStore.expenses) return [];
+  if (!expensesStore.expenses || !startDate.value || !endDate.value) {
+    return [];
+  }
 
-  console.log(
-    "Filtering expenses with date range:",
-    startDate.value,
-    "to",
-    endDate.value
-  );
+  const start = new Date(startDate.value);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(endDate.value);
+  end.setHours(23, 59, 59, 999);
 
   return (expensesStore.expenses as ExpenseWithCategory[]).filter((expense) => {
-    try {
-      const expenseDate = new Date(expense.date);
-      const start = startDate.value ? new Date(startDate.value) : null;
-      const end = endDate.value ? new Date(endDate.value) : null;
+    const expenseDate = new Date(expense.date);
+    const categoryId = expense.categoryId || expense.category_id;
+    const value = parseFloat(String(expense.value));
 
-      if (start) start.setHours(0, 0, 0, 0);
-      if (end) end.setHours(23, 59, 59, 999);
+    const isInDateRange = expenseDate >= start && expenseDate <= end;
+    const matchesCategory =
+      !selectedCategory.value ||
+      categoryId?.toString() === selectedCategory.value;
+    const isValidValue = !isNaN(value);
 
-      const isInDateRange =
-        (!start || expenseDate >= start) && (!end || expenseDate <= end);
-
-      const categoryId = expense.categoryId || expense.category_id;
-      const matchesCategory =
-        !selectedCategory.value ||
-        categoryId?.toString() === selectedCategory.value;
-
-      return isInDateRange && matchesCategory;
-    } catch (error) {
-      console.error("Error filtering expense:", expense, error);
-      return false;
-    }
+    return isInDateRange && matchesCategory && isValidValue;
   });
 });
 
 const pieChartData = computed(() => {
-  console.log("Computing pie chart data...");
+  const categoryTotals = new Map<string, number>();
 
-  if (!filteredExpenses.value.length) {
-    console.log("No filtered expenses found");
-    return [];
-  }
-
-  const categoryMap = new Map<string, number>();
-
-  filteredExpenses.value.forEach((expense) => {
-    try {
-      const categoryId =
-        (expense as any).categoryId || (expense as any).category_id;
-
-      let categoryName = "Sem Categoria";
-      if (categoryId && categoriesStore.categories) {
-        const category = categoriesStore.categories.find(
-          (cat) => cat.id === categoryId
-        );
-        if (category) {
-          categoryName = category.name;
-        }
-      }
-
-      let amount = 0;
-      if (typeof expense.value === "number") {
-        amount = expense.value;
-      } else if (typeof expense.value === "string") {
-        amount = parseFloat(expense.value) || 0;
-      }
-
-      if (isNaN(amount)) {
-        console.warn("Invalid expense value:", expense);
-        return;
-      }
-
-      const currentTotal = categoryMap.get(categoryName) || 0;
-      categoryMap.set(categoryName, currentTotal + amount);
-    } catch (error) {
-      console.error("Error processing expense:", expense, error);
-    }
+  categoriesStore.categories.forEach((cat) => {
+    categoryTotals.set(cat.name, 0);
   });
 
-  const result = Array.from(categoryMap.entries())
+  categoryTotals.set("Sem Categoria", 0);
+
+  filteredExpenses.value.forEach((expense) => {
+    const category = categoriesStore.categories.find(
+      (cat) => cat.id === (expense.categoryId || expense.category_id)
+    );
+    const categoryName = category ? category.name : "Sem Categoria";
+    const amount = parseFloat(String(expense.value)) || 0;
+
+    categoryTotals.set(
+      categoryName,
+      (categoryTotals.get(categoryName) || 0) + amount
+    );
+  });
+
+  return Array.from(categoryTotals.entries())
     .map(([category, amount]) => ({
       category,
       amount: parseFloat(amount.toFixed(2)),
     }))
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 10);
-
-  console.log("Final pie chart data:", result);
-  return result;
+    .sort((a, b) => b.amount - a.amount);
 });
 
 const lineChartData = computed(() => {
-  if (!filteredExpenses.value.length) return [];
+  if (!filteredExpenses.value.length || !startDate.value || !endDate.value) {
+    return [];
+  }
 
   const groupedData = new Map<string, number>();
-
-  const dates = filteredExpenses.value
-    .map((expense) => new Date(expense.date).getTime())
-    .sort((a, b) => a - b);
-
-  if (dates.length === 0) return [];
-
-  const minDate = new Date(Math.min(...dates));
-  const maxDate = new Date(Math.max(...dates));
-
   const allDateKeys: string[] = [];
-  const currentDate = new Date(minDate);
 
-  while (currentDate <= maxDate) {
+  const start = new Date(startDate.value);
+  const end = new Date(endDate.value);
+  let currentDate = new Date(start);
+
+  while (currentDate <= end) {
     let key: string;
-
     switch (groupBy.value) {
       case "day":
         key = format(currentDate, "dd/MM/yyyy", { locale: ptBR });
         currentDate.setDate(currentDate.getDate() + 1);
         break;
       case "week":
-        key = `Semana ${format(currentDate, "w", {
+        key = `Semana ${getWeek(currentDate, {
           locale: ptBR,
+          weekStartsOn: 1,
         })} ${currentDate.getFullYear()}`;
         currentDate.setDate(currentDate.getDate() + 7);
         break;
@@ -670,24 +520,21 @@ const lineChartData = computed(() => {
         currentDate.setMonth(currentDate.getMonth() + 1);
         break;
     }
-
-    if (!allDateKeys.includes(key)) {
-      allDateKeys.push(key);
-      groupedData.set(key, 0);
-    }
+    allDateKeys.push(key);
+    groupedData.set(key, 0);
   }
 
   filteredExpenses.value.forEach((expense) => {
     const date = new Date(expense.date);
     let key: string;
-
     switch (groupBy.value) {
       case "day":
         key = format(date, "dd/MM/yyyy", { locale: ptBR });
         break;
       case "week":
-        key = `Semana ${format(date, "w", {
+        key = `Semana ${getWeek(date, {
           locale: ptBR,
+          weekStartsOn: 1,
         })} ${date.getFullYear()}`;
         break;
       case "month":
@@ -695,12 +542,7 @@ const lineChartData = computed(() => {
         key = `${format(date, "MMMM", { locale: ptBR })} ${date.getFullYear()}`;
         break;
     }
-
-    const amount =
-      typeof expense.value === "number"
-        ? expense.value
-        : parseFloat(String(expense.value || "0")) || 0;
-
+    const amount = parseFloat(String(expense.value)) || 0;
     if (!isNaN(amount)) {
       groupedData.set(key, (groupedData.get(key) || 0) + amount);
     }
@@ -713,75 +555,86 @@ const lineChartData = computed(() => {
 });
 
 const categoryBreakdown = computed(() => {
-  if (!pieChartData.value.length) return [];
-
   const total = pieChartData.value.reduce((sum, item) => sum + item.amount, 0);
 
-  return pieChartData.value
-    .map((item) => {
-      const percentage = total > 0 ? (item.amount / total) * 100 : 0;
-      return {
-        category: item.category,
-        amount: item.amount,
-        percentage: parseFloat(percentage.toFixed(2)),
-      };
-    })
-    .sort((a, b) => b.amount - a.amount);
+  return pieChartData.value.map((item) => {
+    const percentage = total > 0 ? (item.amount / total) * 100 : 0;
+    return {
+      category: item.category,
+      amount: item.amount,
+      percentage: parseFloat(percentage.toFixed(2)),
+    };
+  });
 });
+
+const calculatePreviousPeriodData = () => {
+  if (!startDate.value || !endDate.value) {
+    return {
+      previousTotal: 0,
+      previousCount: 0,
+    };
+  }
+
+  const start = new Date(startDate.value).getTime();
+  const end = new Date(endDate.value).getTime();
+  const periodLength = end - start;
+
+  const prevStart = start - periodLength - 86400000;
+  const prevEnd = start - 86400000;
+
+  const previousPeriodExpenses = (
+    expensesStore.expenses as ExpenseWithCategory[]
+  ).filter((expense) => {
+    const expenseDate = new Date(expense.date).getTime();
+    return expenseDate >= prevStart && expenseDate <= prevEnd;
+  });
+
+  const previousTotal = previousPeriodExpenses.reduce(
+    (sum, exp) => sum + (parseFloat(String(exp.value)) || 0),
+    0
+  );
+  const previousCount = previousPeriodExpenses.length;
+
+  return {
+    previousTotal,
+    previousCount,
+  };
+};
 
 const summaryStats = computed(() => {
   const currentPeriodExpenses = filteredExpenses.value;
   const currentTotal = currentPeriodExpenses.reduce(
-    (sum: number, exp: any) => sum + parseFloat(exp.value.toString()),
+    (sum, exp) => sum + (parseFloat(String(exp.value)) || 0),
     0
   );
-  // Calculate previous period date range
-  const previousPeriodExpenses = expensesStore.expenses.filter((expense) => {
-    if (!startDate.value || !endDate.value) return false;
+  const currentCount = currentPeriodExpenses.length;
 
-    const expenseDate = new Date(expense.date).getTime();
-    const start = new Date(startDate.value).getTime();
-    const end = new Date(endDate.value).getTime();
+  const { previousTotal, previousCount } = calculatePreviousPeriodData();
 
-    const periodLength = end - start;
-    const prevStart = start - periodLength - 86400000;
-    const prevEnd = start - 86400000;
-
-    return expenseDate >= prevStart && expenseDate <= prevEnd;
-  });
-
-  // Calculate previous period metrics
-  const previousTotal = previousPeriodExpenses.reduce(
-    (sum: number, exp: any) => sum + parseFloat(exp.value.toString()),
-    0
-  );
-  
-  const previousUniqueCategories = new Set(
-    previousPeriodExpenses
-      .map((e: any) => e.categoryId || e.category_id)
-      .filter(Boolean)
-  ).size;
-
-  // Calculate percentage changes
-  const totalChange = previousTotal > 0
-    ? ((currentTotal - previousTotal) / previousTotal) * 100
-    : 0;
-
-  const avgPerDay = currentPeriodExpenses.length > 0
-    ? currentTotal / (currentPeriodExpenses.length * 1.0)
-    : 0;
-    
-  const uniqueCategoriesChange = previousPeriodExpenses.length > 0 && previousUniqueCategories > 0
-    ? ((new Set(currentPeriodExpenses.map((e) => e.categoryId || e.category_id).filter(Boolean)).size - previousUniqueCategories) / previousUniqueCategories) * 100
-    : 0;
+  const totalChange =
+    previousTotal > 0
+      ? ((currentTotal - previousTotal) / previousTotal) * 100
+      : 0;
+  const countChange =
+    previousCount > 0
+      ? ((currentCount - previousCount) / previousCount) * 100
+      : 0;
+  const avgPerDay =
+    currentCount > 0
+      ? currentTotal /
+        ((new Date(endDate.value).getTime() -
+          new Date(startDate.value).getTime()) /
+          (1000 * 60 * 60 * 24) +
+          1)
+      : 0;
 
   return [
     {
       title: "Total Gasto",
       value: currentTotal,
-      change: parseFloat(totalChange.toFixed(1)), // Round to 1 decimal place
+      change: parseFloat(totalChange.toFixed(1)),
       icon: "mdi-cash-multiple",
-      iconColor: "primary",
+      iconColor: "white",
       color: "primary",
     },
     {
@@ -789,17 +642,17 @@ const summaryStats = computed(() => {
       value: avgPerDay,
       change: 0,
       icon: "mdi-chart-line",
-      iconColor: "success",
+      iconColor: "white",
       color: "success",
     },
     {
       title: "Total de Despesas",
-      value: currentPeriodExpenses.length,
-      valueFormatter: (val: number) => val.toString(), // Show as plain number
-      change: parseFloat(uniqueCategoriesChange.toFixed(1)),
-      changeLabel: 'em relação ao período anterior',
+      value: currentCount,
+      valueFormatter: (val: number) => val.toString(),
+      change: parseFloat(countChange.toFixed(1)),
+      changeLabel: "em relação ao período anterior",
       icon: "mdi-receipt",
-      iconColor: "info",
+      iconColor: "white",
       color: "info",
     },
     {
@@ -807,40 +660,18 @@ const summaryStats = computed(() => {
       value: new Set(
         currentPeriodExpenses
           .map((e) => e.categoryId || e.category_id)
-          .filter(Boolean) // Remove null/undefined values
+          .filter(Boolean)
       ).size,
-      valueFormatter: (val: number) => val.toString(), // Show as plain number
-      change: parseFloat(uniqueCategoriesChange.toFixed(1)),
-      changeLabel: 'em relação ao período anterior',
+      valueFormatter: (val: number) => val.toString(),
+      change: 0,
       icon: "mdi-shape",
-      iconColor: "orange",
+      iconColor: "white",
       color: "orange-darken-2",
     },
   ];
 });
 
-const categoryHeaders = [
-  {
-    title: "Categoria",
-    key: "category",
-    sortable: true,
-    align: "start" as const,
-  },
-  {
-    title: "Valor",
-    key: "amount",
-    sortable: true,
-    align: "end" as const,
-  },
-  {
-    title: "Porcentagem",
-    key: "percentage",
-    sortable: false,
-    align: "start" as const,
-    width: "50%",
-  },
-];
-
+// Métodos
 const refreshData = async () => {
   loading.value = true;
   try {
@@ -864,6 +695,7 @@ const toggleTransactionsTable = () => {
 };
 
 const formatCurrency = (value: number) => {
+  if (isNaN(value)) return "R$ 0,00";
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
@@ -895,11 +727,35 @@ const getCategoryColor = (categoryName: string) => {
     "amber",
     "orange",
     "brown",
+    "grey",
+    "deep-purple",
   ];
-
   return colors[Math.abs(hash) % colors.length];
 };
 
+const categoryHeaders = [
+  {
+    title: "Categoria",
+    key: "category",
+    sortable: true,
+    align: "start" as const,
+  },
+  {
+    title: "Valor",
+    key: "amount",
+    sortable: true,
+    align: "end" as const,
+  },
+  {
+    title: "Porcentagem",
+    key: "percentage",
+    sortable: false,
+    align: "start" as const,
+    width: "50%",
+  },
+];
+
+// Lifecycle Hooks
 onMounted(async () => {
   await refreshData();
 });
@@ -1051,3 +907,4 @@ onMounted(async () => {
   background: #777;
 }
 </style>
+```
