@@ -159,7 +159,7 @@
 import { ref, onMounted, computed } from "vue";
 import { useDisplay } from "vuetify";
 import { useNuxtApp } from "#app";
-import CategoryDialog from "~/components/dialogs/CategoryDialog.vue";
+import CategoryDialog from "~/components/modules/categories/CategoryDialog.vue";
 import DeleteDialog from "~/components/dialogs/DeleteDialog.vue";
 
 const display = useDisplay();

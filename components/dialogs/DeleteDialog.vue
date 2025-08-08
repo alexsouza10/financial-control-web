@@ -38,9 +38,9 @@
 <script setup lang="ts">
 const props = defineProps<{
   modelValue: boolean;
-  itemName: string; // O nome do item a ser excluído (ex: nome da categoria)
-  itemType?: string; // O tipo do item (ex: "o gasto", "a categoria")
-  loading?: boolean; // Para controlar o estado de carregamento do botão
+  itemName: string; 
+  itemType?: string; 
+  loading?: boolean; 
 }>();
 
 const emit = defineEmits(["update:modelValue", "confirm"]);
@@ -51,18 +51,8 @@ function cancel() {
 
 function confirmDelete() {
   emit("confirm");
-  // Não feche o modal aqui se `loading` for true, deixe o pai controlar o fechamento
-  // após a conclusão da operação de exclusão (sucesso ou falha).
-  // Se não houver loading, pode fechar.
-  // **Importante: remova esta linha se o pai SEMPRE for gerenciar o fechamento após o "confirm"**
-  // Se o pai sempre chamar o `update:modelValue` após `confirm`, esta linha pode ser removida.
-  // No seu `pages/category.vue`, o pai gerencia, então podemos remover esta `if` aqui.
-  // if (!props.loading) {
-  //   emit("update:modelValue", false);
-  // }
 }
 </script>
 
 <style scoped>
-/* Adicione estilos específicos se desejar para o diálogo de confirmação */
 </style>

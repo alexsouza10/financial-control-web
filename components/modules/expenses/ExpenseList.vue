@@ -391,7 +391,6 @@ const orderedGroupedExpenses = computed(() => {
 
 onMounted(() => {
   categoriesStore.fetchAllCategories().then(() => {
-    console.log("Categories loaded in store:", categoriesStore.categories);
     expensesStore.fetchExpenses();
   });
 });

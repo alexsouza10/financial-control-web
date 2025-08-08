@@ -116,7 +116,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted } from "vue";
-import DatePickerField from "~/components/atoms/DatePickerField.vue";
+import DatePickerField from "~/components/ui/DatePickerField.vue";
 import { useExpensesStore } from "~/stores/useExpensesStore";
 import { useCategoriesStore } from "#imports";
 import type { VForm } from "vuetify/components";

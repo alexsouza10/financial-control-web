@@ -31,12 +31,8 @@ export const useExpensesStore = defineStore("expenses", {
 
     currentMonthExpenses: (state: ExpensesState): number => {
       const now = new Date();
-      const currentMonth = now.getMonth() + 1; // 1-12
+      const currentMonth = now.getMonth() + 1; 
       const currentYear = now.getFullYear();
-      
-      console.log('--- currentMonthExpenses ---');
-      console.log('Current date:', now.toISOString());
-      console.log(`Looking for expenses in month: ${currentMonth}/${currentYear}`);
       
       const total = state.expenses.reduce((sum: number, expense: Expense) => {
         try {          
@@ -45,7 +41,6 @@ export const useExpensesStore = defineStore("expenses", {
           const expenseYear = expenseDate.getFullYear();
           
           if (expenseMonth === currentMonth && expenseYear === currentYear) {
-            console.log(`✅ Adding expense ${expense.id} to total: ${expense.value}`);
             return sum + expense.value;
           }
         } catch (error) {

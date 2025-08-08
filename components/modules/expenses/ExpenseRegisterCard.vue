@@ -143,7 +143,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
-import DatePickerField from "~/components/atoms/DatePickerField.vue";
+import DatePickerField from "~/components/ui/DatePickerField.vue";
 import { useExpensesStore } from "~/stores/useExpensesStore";
 import { useNuxtApp } from "#app";
 import { addMonths, parseISO, format } from "date-fns";
