@@ -93,18 +93,27 @@
               bordered
               :dot="isXs"
             >
-              <v-icon size="24" :color="$route.name === 'notifications' ? 'white' : ''">
-                {{ unreadNotifications ? 'mdi-bell-ring' : 'mdi-bell-outline' }}
+              <v-icon
+                size="24"
+                :color="$route.name === 'notifications' ? 'white' : ''"
+              >
+                {{ unreadNotifications ? "mdi-bell-ring" : "mdi-bell-outline" }}
               </v-icon>
             </v-badge>
-            <v-icon v-else size="24" :color="$route.name === 'notifications' ? 'white' : ''">
+            <v-icon
+              v-else
+              size="24"
+              :color="$route.name === 'notifications' ? 'white' : ''"
+            >
               mdi-bell-outline
             </v-icon>
           </v-btn>
         </template>
 
         <v-card elevation="4" class="notification-dropdown">
-          <v-card-title class="d-flex align-center justify-space-between px-4 py-3">
+          <v-card-title
+            class="d-flex align-center justify-space-between px-4 py-3"
+          >
             <span class="text-h6">Notificações</span>
             <v-btn
               v-if="unreadNotifications"
@@ -170,7 +179,9 @@
       </v-menu>
 
       <v-tooltip
-        :text="isDark ? 'Alternar para tema claro' : 'Alternar para tema escuro'"
+        :text="
+          isDark ? 'Alternar para tema claro' : 'Alternar para tema escuro'
+        "
         location="bottom"
       >
         <template #activator="{ props: tooltipProps }">
@@ -179,16 +190,25 @@
             icon
             variant="text"
             class="header-icon-btn"
-            :aria-label="isDark ? 'Alternar para tema claro' : 'Alternar para tema escuro'"
+            :aria-label="
+              isDark ? 'Alternar para tema claro' : 'Alternar para tema escuro'
+            "
             @click="toggleTheme"
             size="small"
           >
-            <v-icon size="24">{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
+            <v-icon size="24">{{
+              isDark ? "mdi-weather-sunny" : "mdi-weather-night"
+            }}</v-icon>
           </v-btn>
         </template>
       </v-tooltip>
 
-      <v-menu v-model="userMenu" location="bottom end" min-width="200" offset="10">
+      <v-menu
+        v-model="userMenu"
+        location="bottom end"
+        min-width="200"
+        offset="10"
+      >
         <template #activator="{ props: menuProps }">
           <v-btn
             v-bind="menuProps"
@@ -284,24 +304,16 @@ import { ref, computed } from "vue";
 import { useRouter, useRoute, type RouteLocationNormalizedLoaded } from "vue-router";
 import { useTheme, useDisplay } from "vuetify";
 
-// ==========================================
-// TYPES & INTERFACES
-// ==========================================
-
-/** Nomes das rotas disponíveis na aplicação */
 type RouteName = "index" | "expenses" | "category" | "analytics" | "profile" | "settings" | "login" | "notifications";
 
-/** Modos de tema disponíveis */
 type ThemeMode = "light" | "dark";
 
-/** Interface para os itens de navegação */
 interface NavItem {
   title: string;
   icon: string;
   route: RouteName;
 }
 
-/** Interface para os itens do menu do usuário */
 interface UserMenuItem {
   title: string;
   icon: string;
@@ -309,30 +321,22 @@ interface UserMenuItem {
   isDanger: boolean;
 }
 
-/** Interface para notificações */
 interface Notification {
   id: number;
   title: string;
   message: string;
   icon?: string;
   read: boolean;
-  action?: string; // Rota para onde a notificação pode levar
+  action?: string;
 }
-
-// ==========================================
-// PROPS & EMITS
-// ==========================================
 
 interface Emits {
   (e: "logout"): void;
   (e: "toggle-theme"): void;
-  (e: "show-notifications"): void; // Ainda pode ser útil para emitir que o menu de notificação foi aberto
+  (e: "show-notifications"): void;
 }
 const emit = defineEmits<Emits>();
 
-// ==========================================
-// CONSTANTS
-// ==========================================
 
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { title: "Início", icon: "mdi-home", route: "index" },
@@ -367,22 +371,14 @@ const USER_MENU_ITEMS: ReadonlyArray<UserMenuItem> = [
   },
 ];
 
-// ==========================================
-// COMPOSABLES
-// ==========================================
 const router = useRouter();
 const route: RouteLocationNormalizedLoaded = useRoute();
 const theme = useTheme();
-const display = useDisplay(); // Adicionado para controle de breakpoints
+const display = useDisplay();
 
-// ==========================================
-// REACTIVE STATE
-// ==========================================
+const drawer = ref<boolean>(false);
+const userMenu = ref<boolean>(false);
 
-const drawer = ref<boolean>(false); // Controle do menu mobile
-const userMenu = ref<boolean>(false); // Controle do menu do usuário
-
-// Exemplo de estado de notificações
 const notifications = ref<Notification[]>([
   { id: 1, title: 'Bem-vindo ao Gestão de Gastos!', message: 'Explore os recursos e comece a controlar suas finanças.', icon: 'mdi-hand-wave-outline', read: false, action: '/welcome' },
   { id: 2, title: 'Nova Funcionalidade', message: 'Relatórios de despesas agora incluem gráficos de pizza!', icon: 'mdi-chart-pie', read: false, action: '/analytics' },
@@ -390,10 +386,6 @@ const notifications = ref<Notification[]>([
   { id: 4, title: 'Dica de Economia', message: 'Considere criar um orçamento para sua categoria de alimentação este mês.', icon: 'mdi-lightbulb-on-outline', read: true, action: '/budgets' },
   { id: 5, title: 'Aviso Importante', message: 'Sua assinatura expira em 7 dias. Renove agora para continuar usando todos os recursos.', icon: 'mdi-alert-circle-outline', read: false, action: '/billing' },
 ]);
-
-// ==========================================
-// COMPUTED PROPERTIES
-// ==========================================
 
 const navItems = computed<NavItem[]>(() => [...NAV_ITEMS]);
 const userMenuItems = computed<UserMenuItem[]>(() => [...USER_MENU_ITEMS]);
@@ -410,14 +402,9 @@ const currentThemeMode = computed<ThemeMode>(() =>
 );
 const themeIcons = computed<string>(() => THEME_ICONS[currentThemeMode.value]);
 
-// Breakpoints do Vuetify
 const isMobile = computed(() => display.smAndDown.value);
 const isDesktop = computed(() => display.mdAndUp.value);
 const isXs = computed(() => display.xs.value);
-
-// ==========================================
-// METHODS
-// ==========================================
 
 const goHome = (): void => {
   router.push({ name: "index" });
@@ -482,7 +469,7 @@ const handleNotificationClick = (notification: Notification): void => {
   markAsRead(notification.id);
   if (notification.action) {
     router.push(notification.action);
-    userMenu.value = false; // Fecha o menu de notificações ao navegar
+    userMenu.value = false;
   }
 };
 
@@ -497,7 +484,6 @@ const logoutAndRedirect = (): void => {
 </script>
 
 <style scoped>
-/* Estilo para botão ativo na navegação desktop */
 .v-btn--active {
   background-color: rgba(255, 255, 255, 0.12);
   border-radius: 8px;
@@ -517,7 +503,6 @@ const logoutAndRedirect = (): void => {
   border-radius: 2px;
 }
 
-/* Título da barra */
 .v-toolbar-title {
   flex-shrink: 1;
   min-width: 0;
@@ -531,7 +516,6 @@ const logoutAndRedirect = (): void => {
   transition: color 0.2s ease;
 }
 
-/* Acessibilidade - Estilo de foco para todos os elementos interativos */
 .v-btn:focus-visible,
 .v-toolbar-title:focus-visible,
 .v-list-item:focus-visible,
@@ -542,7 +526,6 @@ const logoutAndRedirect = (): void => {
   border-radius: var(--btn-border-radius, inherit);
 }
 
-/* Ajustes gerais para mobile */
 @media (max-width: 960px) {
   .v-toolbar__content {
     padding-left: 8px;
@@ -554,12 +537,10 @@ const logoutAndRedirect = (): void => {
   }
 }
 
-/* Transições em itens da lista do drawer */
 .v-list-item {
   transition: background-color 0.2s ease-in-out;
 }
 
-/* GRUPO DE AÇÕES (Notificações, Tema, Avatar) */
 .actions-group {
   display: flex;
   align-items: center;
@@ -567,7 +548,6 @@ const logoutAndRedirect = (): void => {
   margin: 0 4px;
 }
 
-/* Estilo base para os botões de ícone (Notificações e Tema) */
 .header-icon-btn {
   --btn-size: 40px;
   --btn-border-radius: 50%;
@@ -578,38 +558,31 @@ const logoutAndRedirect = (): void => {
   margin: 0;
   border-radius: var(--btn-border-radius);
   background: transparent;
-  /* Removido transition aqui, pois queremos que não haja transição no hover de background ou transform */
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* Remove hover background e transform para header-icon-btn */
 .header-icon-btn:hover {
-  background: transparent; /* Garante que não há background no hover */
-  transform: none; /* Garante que não há transformação no hover */
+  background: transparent;
+  transform: none;
 }
 
-/* Remove hover background da overlay do v-btn */
 .header-icon-btn :deep(.v-btn__overlay) {
-  background-color: transparent !important; /* Remove o background do overlay no hover */
-  transition: none !important; /* Remove qualquer transição da overlay no hover */
-  border-radius: 50% !important; /* Mantém a forma circular caso apareça (ex: ripple) */
+  background-color: transparent !important;
+  transition: none !important;
+  border-radius: 50% !important;
 }
 
-/* Ajusta a cor do ícone padrão para branco */
 .header-icon-btn .v-icon {
   color: white !important;
-  /* Removido transition aqui, pois queremos que o ícone não tenha transição no hover */
-  transform: none; /* Garante que não há transformação no ícone no hover */
+  transform: none;
 }
 
-/* Remove efeito de escala no ícone ao passar o mouse */
 .header-icon-btn:hover .v-icon {
   transform: none;
 }
 
-/* BADGE DE NOTIFICAÇÕES */
 .v-badge__badge {
   font-size: 0.65rem;
   height: 18px;
@@ -618,11 +591,10 @@ const logoutAndRedirect = (): void => {
   top: 5px;
   right: 5px;
   border: 1.5px solid rgb(var(--v-theme-primary));
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
   border-radius: 50%;
 }
 
-/* BOTÃO DO AVATAR DO USUÁRIO */
 .header-avatar-btn {
   --avatar-btn-size: 40px;
   --btn-border-radius: 50%;
@@ -633,52 +605,44 @@ const logoutAndRedirect = (): void => {
   margin-left: 8px;
   border-radius: var(--btn-border-radius);
   background: transparent;
-  /* Removido transition aqui */
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* Remove hover background e transform para header-avatar-btn */
 .header-avatar-btn:hover {
-  background: transparent; /* Garante que não há background no hover */
-  transform: none; /* Garante que não há transformação no hover */
-  box-shadow: none; /* Remove a sombra no hover */
+  background: transparent;
+  transform: none;
+  box-shadow: none;
 }
 
-/* Remove hover background da overlay do v-btn do avatar */
 .header-avatar-btn :deep(.v-btn__overlay) {
-  background-color: transparent !important; /* Remove o background do overlay no hover */
-  transition: none !important; /* Remove qualquer transição da overlay no hover */
-  border-radius: 50% !important; /* Mantém a forma circular caso apareça (ex: ripple) */
+  background-color: transparent !important;
+  transition: none !important;
+  border-radius: 50% !important;
 }
 
-/* Remove efeitos de hover no v-avatar interno e seu ícone */
 .header-avatar-btn .v-avatar {
   width: calc(100% - 4px);
   height: calc(100% - 4px);
   border: 2px solid rgba(255, 255, 255, 0.3);
   background: rgba(255, 255, 255, 0.1);
-  /* Removido transition aqui */
-  transform: none; /* Garante que não há transformação no avatar no hover */
-  box-shadow: none; /* Remove a sombra no avatar no hover */
-  border-color: rgba(255, 255, 255, 0.3); /* Volta para a cor normal da borda */
+  transform: none;
+  box-shadow: none;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
-/* Garante que o ícone dentro do avatar não tenha efeitos de hover */
 .header-avatar-btn .v-avatar .v-icon {
   transform: none;
   transition: none;
 }
 
-/* Remove hover do v-avatar especificamente, caso o Vuetify aplique algo */
 .header-avatar-btn .v-avatar:hover {
   transform: none;
   box-shadow: none;
   border-color: rgba(255, 255, 255, 0.3);
 }
 
-/* MENU DE NOTIFICAÇÕES (DROPDOWN) */
 .notification-dropdown {
   max-height: 80vh;
   display: flex;
@@ -699,7 +663,6 @@ const logoutAndRedirect = (): void => {
   background-color: rgba(0, 0, 0, 0.02);
 }
 
-/* Estilo para notificação não lida */
 .notification-item.bg-grey-lighten-4 {
   background-color: rgba(var(--v-theme-primary), 0.05) !important;
 }

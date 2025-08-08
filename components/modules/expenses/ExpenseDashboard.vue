@@ -290,8 +290,8 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useExpensesStore } from "~/stores/useExpensesStore";
 import { useCategoriesStore } from "~/stores/useCategoriesStore";
-import CategoryPieChart from "~/components/molecules/CategoryPieChart.vue";
-import ExpenseLineChart from "~/components/molecules/ExpenseLineChart.vue";
+import CategoryPieChart from "~/components/modules/categories/CategoryPieChart.vue";
+import ExpenseLineChart from "~/components/modules/expenses/ExpenseLineChart.vue";
 import ExpenseList from "./ExpenseList.vue";
 import {
   format,

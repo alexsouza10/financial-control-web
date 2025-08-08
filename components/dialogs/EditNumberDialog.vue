@@ -123,7 +123,7 @@
 import { ref, watch, computed, onMounted, PropType } from "vue";
 import { useTheme } from "vuetify";
 import { parseISO, format, addMonths } from "date-fns";
-import DatePickerField from "~/components/atoms/DatePickerField.vue";
+import DatePickerField from "~/components/ui/DatePickerField.vue";
 import { useExpensesStore } from "~/stores/useExpensesStore";
 import { useCategoriesStore } from "#imports";
 import type { Expense } from "~/types/expense";

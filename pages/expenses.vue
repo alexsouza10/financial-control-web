@@ -27,9 +27,9 @@
 
 <script setup lang="ts">
 import { onMounted } from "vue";
-import ExpenseSummary from "~/components/organisms/ExpenseSummary.vue";
-import ExpenseRegisterCard from "~/components/organisms/ExpenseRegisterCard.vue";
-import ExpenseList from "~/components/organisms/ExpenseList.vue";
+import ExpenseSummary from "~/components/modules/expenses/ExpenseSummary.vue";
+import ExpenseRegisterCard from "~/components/modules/expenses/ExpenseRegisterCard.vue";
+import ExpenseList from "~/components/modules/expenses/ExpenseList.vue";
 
 import { useExpensesStore } from "~/stores/useExpensesStore";
 import { useCategoriesStore } from "~/stores/useCategoriesStore";

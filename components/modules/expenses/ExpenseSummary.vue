@@ -57,8 +57,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useExpensesStore } from "~/stores/useExpensesStore";
-import ExpenseCard from "../molecules/ExpenseCard.vue";
-import EditNumberDialog from "../dialogs/EditNumberDialog.vue";
+import ExpenseCard from "./ExpenseCard.vue";
+import EditNumberDialog from "~/components/dialogs/EditNumberDialog.vue";
 
 const store = useExpensesStore();
 const dialog = ref(false);
