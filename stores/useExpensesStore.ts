@@ -109,7 +109,7 @@ export const useExpensesStore = defineStore("expenses", {
       this.loading = true;
       this.error = null;
       try {
-        const response = await $api.post<Expense>("/Expenses", expensePayload);
+        const response = await $api.post<Expense>("/Expenses", { expenseDto: expensePayload });
         this.expenses.push(response.data);
       } catch (err: any) {
         this.error =
@@ -126,7 +126,7 @@ export const useExpensesStore = defineStore("expenses", {
       this.loading = true;
       this.error = null;
       try {
-        await $api.put<Expense>(`/Expenses/${id}`, payload);
+        await $api.put<Expense>(`/Expenses/${id}`, { expenseDto: payload });
         await this.fetchExpenses();
       } catch (err: any) {
         this.error =

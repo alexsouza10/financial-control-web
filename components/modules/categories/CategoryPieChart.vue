@@ -1,9 +1,10 @@
 <template>
-  <div class="category-pie-chart-wrapper">
-    <div class="chart-container">
+  <v-card elevation="3">
+    <v-card-title class="justify-center">{{ title }}</v-card-title>
+    <v-card-text class="d-flex" style="height: 360px">
       <Pie :data="chartData" :options="chartOptions" />
-    </div>
-  </div>
+    </v-card-text>
+  </v-card>
 </template>
 
 <script setup lang="ts">
@@ -48,6 +49,11 @@ const backgroundColors = [
   "#f06292",
   "#9575cd",
   "#a1887f",
+  "#aed581",
+  "#fff176", 
+  "#81d4fa",
+  "#f8bbd0",
+  "#d1c4e9",
 ];
 
 const chartData = computed(() => {
@@ -131,19 +137,4 @@ const chartOptions = {
 };
 </script>
 
-<style scoped>
-.category-pie-chart-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 16px;
-}
-
-.chart-container {
-  width: 500px;
-  height: 360px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-</style>
+<style scoped></style>
