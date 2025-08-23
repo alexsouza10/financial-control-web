@@ -16,3 +16,11 @@ export const formatDate = (dateStr: string) => {
     day: "numeric",
   });
 };
+
+export function formatCurrency(value: number): string {
+  return value?.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+  }) ?? "R$ 0,00";
+}
