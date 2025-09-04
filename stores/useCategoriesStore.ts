@@ -2,8 +2,16 @@
 import { defineStore } from "pinia";
 import { useNuxtApp } from "#app";
 
+// --- Interfaces ---
 interface Category {
   id: string;
+  name: string;
+  icon: string;
+  // Adicionar a cor pode ser útil para os gráficos
+  // color?: string; 
+}
+
+interface CategoryPayload {
   name: string;
   icon: string;
 }
@@ -21,139 +29,78 @@ export const useCategoriesStore = defineStore("categories", {
     error: null,
   }),
 
+  getters: {
+    getCategoryById: (state) => {
+      return (id: string) => state.categories.find(cat => cat.id === id);
+    },
+
+    getCategoryByName: (state) => {
+      return (name: string) => state.categories.find(cat => cat.name.toUpperCase() === name.toUpperCase());
+    },
+  },
+
   actions: {
+    async _performApiCall<T>(apiCall: () => Promise<T>): Promise<T> {
+      this.loading = true;
+      this.error = null;
+      try {
+        return await apiCall();
+      } catch (err: any) {
+        const errorMessage = "Ocorreu um erro: " + (err.response?.data?.title || err.message);
+        this.error = errorMessage;
+        console.error(errorMessage, err);
+        throw err; // Re-lança o erro para que o componente possa tratá-lo se necessário
+      } finally {
+        this.loading = false;
+      }
+    },
+
     async fetchAllCategories() {
       const { $api } = useNuxtApp();
-      this.loading = true;
-      this.error = null;
-      try {
-        const response = await $api.get<Category[]>("/categories");
-        // Converte os nomes para maiúsculas ao buscar
-        this.categories = response.data.map(cat => ({
-          ...cat,
-          name: cat.name.toUpperCase()
-        }));
-      } catch (err: any) {
-        this.error =
-          "Failed to fetch categories: " + (err.response?.data || err.message);
-        console.error(this.error, err);
-      } finally {
-        this.loading = false;
-      }
+      const response = await this._performApiCall(() => $api.get<Category[]>("/categories"));
+      
+      this.categories = response.data.map(cat => ({
+        ...cat,
+        name: cat.name.toUpperCase(),
+      }));
     },
 
-    async createCategory(categoryPayload: { name: string; icon: string }) {
-      console.log('Store: Creating category with payload:', categoryPayload);
+    async createCategory(categoryPayload: CategoryPayload) {
       const { $api } = useNuxtApp();
-      this.loading = true;
-      this.error = null;
-      try {
-        // Converte o nome para maiúsculas antes de enviar para o backend
-        const payloadWithUpperCase = {
-          ...categoryPayload,
-          name: categoryPayload.name.toUpperCase()
-        };
-        
-        console.log('Store: Sending to API:', payloadWithUpperCase);
-        const response = await $api.post<Category>("/categories", payloadWithUpperCase);
-        console.log('Store: API response:', response.data);
-        
-        // Adiciona a nova categoria com nome em maiúsculas
-        const newCategory = {
-          ...response.data,
-          name: response.data.name.toUpperCase()
-        };
-        
-        this.categories.push(newCategory);
-        console.log('Store: Category added to state:', newCategory);
-        console.log('Store: Total categories now:', this.categories.length);
-        return newCategory;
-      } catch (err: any) {
-        console.error('Store: Error creating category:', err);
-        this.error =
-          "Failed to create category: " + (err.response?.data || err.message);
-        console.error(this.error, err);
-        throw err;
-      } finally {
-        this.loading = false;
-      }
-    },
+      const payloadWithUpperCase = {
+        ...categoryPayload,
+        name: categoryPayload.name.toUpperCase(),
+      };
 
-    async updateCategory(id: string, categoryPayload: { name: string; icon: string }) {
-      console.log('Store: Updating category with ID:', id, 'payload:', categoryPayload);
+      const response = await this._performApiCall(() => 
+        $api.post<Category>("/categories", payloadWithUpperCase)
+      );
+
+      const newCategory = { ...response.data, name: response.data.name.toUpperCase() };
+      this.categories.push(newCategory);
+      return newCategory;
+    },
+    async updateCategory(id: string, categoryPayload: CategoryPayload) {
       const { $api } = useNuxtApp();
-      this.loading = true;
-      this.error = null;
-      try {
-        // Converte o nome para maiúsculas antes de enviar para o backend
-        const payloadWithUpperCase = {
-          ...categoryPayload,
-          name: categoryPayload.name.toUpperCase()
-        };
-        
-        console.log('Store: Sending update to API:', payloadWithUpperCase);
-        await $api.put<Category>(`/categories/${id}`, payloadWithUpperCase);
-        console.log('Store: API update successful');
-        
-        // Atualiza a categoria no estado local
-        const index = this.categories.findIndex(cat => cat.id === id);
-        if (index !== -1) {
-          this.categories[index] = {
-            ...this.categories[index],
-            name: payloadWithUpperCase.name,
-            icon: payloadWithUpperCase.icon
-          };
-          console.log('Store: Category updated in state:', this.categories[index]);
-        } else {
-          console.warn('Store: Category not found in state for ID:', id);
-        }
-        
-      } catch (err: any) {
-        console.error('Store: Error updating category:', err);
-        this.error =
-          "Failed to update category: " + (err.response?.data || err.message);
-        console.error(this.error, err);
-        throw err;
-      } finally {
-        this.loading = false;
+      const payloadWithUpperCase = {
+        ...categoryPayload,
+        name: categoryPayload.name.toUpperCase(),
+      };
+
+      await this._performApiCall(() => 
+        $api.put<Category>(`/categories/${id}`, payloadWithUpperCase)
+      );
+      
+      const index = this.categories.findIndex(cat => cat.id === id);
+      if (index !== -1) {
+        this.categories[index] = { ...this.categories[index], ...payloadWithUpperCase };
       }
     },
 
     async deleteCategory(id: string) {
-      console.log('Store: Deleting category with ID:', id);
       const { $api } = useNuxtApp();
-      this.loading = true;
-      this.error = null;
-      try {
-        console.log('Store: Sending delete request to API');
-        await $api.delete(`/categories/${id}`);
-        console.log('Store: API delete successful');
-        
-        // Remove a categoria do estado local
-        const beforeCount = this.categories.length;
-        this.categories = this.categories.filter(cat => cat.id !== id);
-        const afterCount = this.categories.length;
-        
-        console.log('Store: Categories before:', beforeCount, 'after:', afterCount);
-        
-      } catch (err: any) {
-        console.error('Store: Error deleting category:', err);
-        this.error =
-          "Failed to delete category: " + (err.response?.data || err.message);
-        console.error(this.error, err);
-        throw err;
-      } finally {
-        this.loading = false;
-      }
+      await this._performApiCall(() => $api.delete(`/categories/${id}`));
+      this.categories = this.categories.filter(cat => cat.id !== id);
     },
   },
-  getters: {
-    // Opcional: se você precisar de categorias formatadas em outros lugares
-    formattedCategories: (state) => {
-      return state.categories.map(cat => ({
-        id: cat.id,
-        name: cat.name.toUpperCase(),
-      }));
-    }
-  }
 });
