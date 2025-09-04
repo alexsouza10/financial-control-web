@@ -27,7 +27,9 @@ export function filterExpensesByDateAndCategory(
     const expenseDate = new Date(expense.date);
     const start = startDate ? new Date(startDate) : null;
     const end = endDate ? new Date(endDate) : null;
-
+if (end) {
+  end.setHours(23, 59, 59, 999); // Set to the end of the day
+}
     const isDateInRange =
       (!start || expenseDate >= start) && (!end || expenseDate <= end);
 

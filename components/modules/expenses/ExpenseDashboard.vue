@@ -2,6 +2,10 @@
   <v-container fluid>
     <!-- Filtros de período e agrupamento -->
     <v-card elevation="2" class="mb-6">
+      <v-card-title class="text-h6 text-center"
+        >Filtros por Período</v-card-title
+      >
+      <v-divider class="my-2"></v-divider>
       <v-card-text>
         <v-row>
           <!-- Período -->
@@ -18,7 +22,6 @@
             />
           </v-col>
 
-          <!-- Data Inicial -->
           <v-col cols="12" md="3">
             <v-menu
               v-model="startMenu"
@@ -48,7 +51,6 @@
             </v-menu>
           </v-col>
 
-          <!-- Data Final -->
           <v-col cols="12" md="3">
             <v-menu
               v-model="endMenu"
@@ -79,7 +81,6 @@
             </v-menu>
           </v-col>
 
-          <!-- Agrupar por -->
           <v-col cols="12" md="3">
             <v-select
               v-model="groupBy"
@@ -142,7 +143,7 @@
     <v-row class="mb-6">
       <v-col cols="12" md="6">
         <v-card class="pa-4" outlined>
-          <v-card-title class="text-h6"
+          <v-card-title class="text-h6 text-center"
             >Despesas ao Longo do Tempo</v-card-title
           >
           <v-divider class="my-2"></v-divider>
@@ -154,10 +155,10 @@
           />
         </v-card>
       </v-col>
-      
+
       <v-col cols="12" md="6">
         <v-card class="pa-4" outlined>
-          <v-card-title class="text-h6"
+          <v-card-title class="text-h6 text-center"
             >Distribuição por Categoria</v-card-title
           >
           <v-divider class="my-2"></v-divider>
@@ -166,47 +167,65 @@
       </v-col>
     </v-row>
 
-    <v-card class="mb-6" outlined>
-      <v-card-title class="d-flex align-center">
-        <span class="text-h6">Despesas por Categoria</span>
-        <v-spacer></v-spacer>
-        <v-btn text color="primary" small @click="toggleCategoryTable">
-          {{ showCategoryTable ? "Ocultar Detalhes" : "Mostrar Detalhes" }}
-          <v-icon right>{{
-            showCategoryTable ? "mdi-chevron-up" : "mdi-chevron-down"
-          }}</v-icon>
-        </v-btn>
-      </v-card-title>
+<v-card variant="outlined" class="position-relative">
+  <v-overlay v-model="loading" contained class="align-center justify-center" :persistent="true">
+    <v-progress-circular color="primary" indeterminate size="64" />
+  </v-overlay>
 
-      <v-expand-transition>
-        <v-card-text v-show="showCategoryTable">
-          <v-data-table
-            :headers="categoryHeaders"
-            :items="categoryBreakdown"
-            :items-per-page="5"
-            class="elevation-1"
-            :mobile-breakpoint="0"
-            :hide-default-footer="categoryBreakdown.length <= 5"
+  <v-card-title class="d-flex align-center justify-space-between flex-wrap">
+    <div>
+      <v-icon start>mdi-tag-multiple-outline</v-icon>
+      <span class="font-weight-medium">Despesas por Categoria</span>
+    </div>
+    <v-btn variant="text" color="primary" @click="showCategoryTable = !showCategoryTable">
+      {{ showCategoryTable ? 'Ocultar' : 'Detalhar' }}
+      <v-icon end>{{ showCategoryTable ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+    </v-btn>
+  </v-card-title>
+  
+  <v-divider />
+
+  <v-expand-transition>
+    <div v-show="showCategoryTable">
+       <v-empty-state
+        v-if="!loading && !categoryBreakdown.length"
+        icon="mdi-database-off-outline"
+        title="Nenhuma categoria com gastos"
+        text="Não há despesas para exibir no período selecionado."
+        class="py-8"
+      />
+      <v-data-table
+        v-else
+        :headers="categoryHeaders"
+        :items="categoryBreakdown.filter(item => item.amount > 0)"
+        :items-per-page="5"
+        density="compact"
+        :hide-default-footer="categoryBreakdown.length <= 5"
+        class="pa-2"
+      >
+        <template #[`item.category`]="{ item }">
+          <v-chip :color="getCategoryColor(item.category)" size="small" label variant="flat">
+            {{ item.category }}
+          </v-chip>
+        </template>
+        <template #[`item.amount`]="{ item }">
+          <span class="font-weight-medium">{{ formatCurrency(item.amount) }}</span>
+        </template>
+        <template #[`item.percentage`]="{ item }">
+          <v-progress-linear
+            :model-value="item.percentage"
+            :color="getCategoryColor(item.category)"
+            height="20"
+            rounded
+            stream
           >
-            <template #item.amount="{ item }">
-              {{ formatCurrency(item.amount) }}
-            </template>
-            <template #item.percentage="{ item }">
-              <v-progress-linear
-                :model-value="item.percentage"
-                height="16"
-                :color="getCategoryColor(item.category)"
-                rounded
-              >
-                <template #default="{ value }"
-                  ><strong>{{ Math.ceil(value) }}%</strong></template
-                >
-              </v-progress-linear>
-            </template>
-          </v-data-table>
-        </v-card-text>
-      </v-expand-transition>
-    </v-card>
+            <strong class="text-white text-caption">{{ Math.round(item.percentage) }}%</strong>
+          </v-progress-linear>
+        </template>
+      </v-data-table>
+    </div>
+  </v-expand-transition>
+</v-card>
   </v-container>
 </template>
 
@@ -226,11 +245,12 @@ import { useExpensesStore } from "~/stores/useExpensesStore";
 import { useCategoriesStore } from "~/stores/useCategoriesStore";
 import ExpenseLineChart from "~/components/modules/expenses/ExpenseLineChart.vue";
 import CategoryPieChart from "~/components/modules/categories/CategoryPieChart.vue";
+import { Title } from "chart.js";
 
 const expensesStore = useExpensesStore();
 const categoriesStore = useCategoriesStore();
 const loading = ref(false);
-const showCategoryTable = ref(true);
+const showCategoryTable = ref(false);
 const groupBy = ref<"day" | "week" | "month">("day");
 const selectedPeriod = ref("30d");
 const startDate = ref("");
@@ -422,23 +442,25 @@ const summaryStats = computed(() => {
       value: currentTotal,
       icon: "mdi-cash-multiple",
       iconColor: "white",
-      color: "primary",
+      color: "secundary",
     },
     {
       title: "Média por Dia",
       value: avgPerDay,
       icon: "mdi-chart-line",
       iconColor: "white",
-      color: "success",
+      color: "secundary",
     },
   ];
 });
 
 const categoryHeaders = [
-  { text: "Categoria", value: "category" },
-  { text: "Valor", value: "amount" },
-  { text: "%", value: "percentage" },
+  { title: 'Categoria', key: 'category', sortable: true, align: 'start' },
+  { title: 'Valor Total', key: 'amount', align: 'start' },
+  { title: 'Percentual', key: 'percentage', sortable: false, align: 'start' },
 ];
+
+
 
 const refreshData = async () => {
   loading.value = true;

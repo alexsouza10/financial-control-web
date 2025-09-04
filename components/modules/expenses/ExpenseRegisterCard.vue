@@ -1,7 +1,7 @@
 <template>
   <v-card rounded="xl" elevation="4" @keydown.esc.stop="closeDialog">
     <v-card-title
-      class="text-h6 d-flex align-center justify-space-between pa-4 bg-primary-gradient"
+      class="text-h6 d-flex align-center justify-space-between bg-primary-gradient"
     >
       <div class="d-flex align-center">
         <v-icon class="me-3" size="28">mdi-plus-circle-outline</v-icon>
@@ -47,10 +47,8 @@
         <v-row dense>
           <!-- Categoria -->
           <v-col cols="12">
-            <div class="d-flex align-center justify-space-between mb-1">
-              <label class="v-label text-caption font-weight-medium"
-                >Categoria</label
-              >
+            <div class="d-flex align-center justify-end mb-1">
+              
               <v-btn
                 size="small"
                 variant="text"
@@ -216,7 +214,7 @@
           </v-col>
 
           <!-- Descrição -->
-          <v-col cols="12">
+          <!-- <v-col cols="12">
             <v-text-field
               v-model="description"
               label="Descrição (Opcional)"
@@ -224,7 +222,7 @@
               variant="outlined"
               density="compact"
             />
-          </v-col>
+          </v-col> -->
 
           <!-- Pagamento -->
           <v-col cols="12" md="6">
@@ -320,7 +318,8 @@
     <!-- Modal para criar nova categoria -->
     <v-dialog v-model="showCategoryDialog" max-width="500" persistent>
       <v-card>
-        <v-card-title class="text-h6 d-flex align-center">
+        <v-card-title class="text-h6 d-flex align-start bg-primary-gradient"
+    >
           <v-icon class="me-3" size="24">mdi-tag-plus</v-icon>
           Nova Categoria
         </v-card-title>
@@ -938,13 +937,13 @@ async function submitExpense() {
         throw new Error('Category ID is required');
       }
         
-      const payload: CreateExpensePayload = {
-        categoryId: categoryId,
-        value: total / installmentsCount,
-        paymentMethod: selectedPaymentMethod.value,
-        card: isCreditCardPayment.value ? selectedCard.value : null,
-        installments: installmentsCount,
-        date: `${format(currentDate, "yyyy-MM-dd")}T00:00:00.000Z`,
+      const payload = {
+        CategoryId: categoryId,
+        Value: total / installmentsCount,
+        PaymentMethod: selectedPaymentMethod.value,
+        Card: isCreditCardPayment.value ? selectedCard.value : null,
+        Installments: installmentsCount,
+        Date: `${format(currentDate, "yyyy-MM-dd")}T00:00:00.000Z`,
       };
       expensePromises.push(expensesStore.addExpense(payload));
     }

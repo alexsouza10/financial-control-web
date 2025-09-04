@@ -17,7 +17,7 @@
     </v-app-bar-nav-icon>
 
     <v-toolbar-title
-      class="d-flex align-center"
+      class="d-flex align-center color-black text-decoration-none"
       @click="goHome"
       role="button"
       tabindex="0"
@@ -27,17 +27,17 @@
       <v-hover v-slot="{ isHovering, props }">
         <div v-bind="props" class="d-flex align-center">
           <v-icon
-            :color="isHovering ? 'secondary' : 'white'"
+            :color="!isHovering ? 'black' : 'white'"
             class="mr-1"
             size="x-large"
             >mdi-cash-multiple</v-icon
           >
           <span
-            class="font-weight-bold text-truncate text-white text-h6 d-none d-sm-block"
+            class="font-weight-bold text-truncate text-black text-h6 d-none d-sm-block"
             >Gestão de Gastos</span
           >
           <span
-            class="font-weight-bold text-truncate text-white text-subtitle-1 d-sm-none"
+            class="font-weight-bold text-truncate text-black text-subtitle-1 d-sm-none"
             >G. Gastos</span
           >
         </div>
@@ -51,7 +51,7 @@
         :key="item.route"
         :to="{ name: item.route }"
         variant="text"
-        color="white"
+        color="black"
         :class="{ 'v-btn--active': isRoute(item.route) }"
         :aria-current="isRoute(item.route) ? 'page' : undefined"
         min-width="auto"
@@ -203,7 +203,7 @@
             :aria-expanded="userMenu ? 'true' : 'false'"
           >
             <v-avatar size="36" color="primary"
-              ><v-icon size="20" color="white"
+              ><v-icon size="20" color="black"
                 >mdi-account-circle</v-icon
               ></v-avatar
             >

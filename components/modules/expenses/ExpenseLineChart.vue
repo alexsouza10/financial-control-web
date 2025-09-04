@@ -1,9 +1,6 @@
 <template>
-  <v-card elevation="3">
-    <v-card-title class="justify-center">{{ title }}</v-card-title>
-    <v-card-text class="d-flex" style="height: 360px">
-      <Line :data="chartData" :options="chartOptions" />
-    </v-card-text>
+  <v-card elevation="2" class="pa-2">
+    <Line v-if="data && data.length" :data="chartData" :options="chartOptions" style="height: 350px" />
   </v-card>
 </template>
 
@@ -20,9 +17,11 @@ import {
   CategoryScale,
   LinearScale,
   Filler,
+  type ChartOptions,
 } from "chart.js";
-import { computed, defineProps } from "vue";
+import { computed } from "vue";
 
+// Registra os plugins necessários do Chart.js
 ChartJS.register(
   Title,
   Tooltip,
@@ -34,129 +33,124 @@ ChartJS.register(
   Filler
 );
 
+// Define as propriedades que o componente aceita
 interface ExpenseDataPoint {
   date: string;
   amount: number;
 }
-const props = defineProps<{ data: ExpenseDataPoint[]; title?: string }>();
+const props = defineProps<{ 
+  data: ExpenseDataPoint[]; 
+  title?: string;
+}>();
 
+// Acessa o tema atual do Vuetify
 const theme = useTheme();
-const isDark = computed(() => theme.global.name.value === "dark");
 
-const parseColorToRgba = (color: string, alpha: number) => {
-  if (color.startsWith("rgb")) {
-    const [r, g, b] = color.match(/\d+/g)!.map(Number);
-    return `rgba(${r},${g},${b},${alpha})`;
-  }
-  if (color.startsWith("#")) {
-    let hex = color.slice(1);
-    if (hex.length === 3)
-      hex = hex
-        .split("")
-        .map((c) => c + c)
-        .join("");
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-    return `rgba(${r},${g},${b},${alpha})`;
-  }
-  return `rgba(0,0,0,${alpha})`;
-};
+// Define as cores do gráfico baseadas no tema
+const chartColors = computed(() => {
+  const isDark = theme.current.value.dark;
+  const surfaceColor = theme.current.value.colors.surface;
 
-const blueGradientColor = "#42A5F5";
-
-const primaryColor = computed(() => {
-  if (process.client) {
-    return (
-      getComputedStyle(document.documentElement)
-        .getPropertyValue("--v-theme-primary")
-        .trim() || "#1976D2"
-    );
-  }
-  return "#1976D2";
+  return {
+    isDark,
+    // ✅ ALTERAÇÃO: Define a cor da linha como branca ou preta (cinza escuro)
+    lineColor: isDark ? '#FFFFFF' : '#212121', 
+    pointBgColor: surfaceColor, // Cor de fundo do ponto será a mesma do fundo do card
+    pointHoverBgColor: isDark ? '#FFFFFF' : '#212121',
+    gridColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+    ticksColor: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+    tooltipBg: isDark ? '#424242' : '#FFFFFF',
+    tooltipText: isDark ? '#FFFFFF' : '#424242',
+  };
 });
 
+// Configuração dos dados do gráfico
 const chartData = computed(() => {
-  const color = isDark.value ? blueGradientColor : primaryColor.value;
-
   return {
     labels: props.data.map((d) => d.date),
     datasets: [
       {
-        label: props.title || "Gastos ao Longo do Tempo",
+        label: "Gastos",
         data: props.data.map((d) => d.amount),
         fill: true,
-        borderColor: color,
+        borderColor: chartColors.value.lineColor,
+        // ✅ ALTERAÇÃO: Cria o gradiente branco ou preto
         backgroundColor: (ctx: any) => {
-          const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 400);
-          gradient.addColorStop(
-            0,
-            parseColorToRgba(color, isDark.value ? 0.6 : 0.25)
-          );
-          gradient.addColorStop(1, parseColorToRgba(color, 0));
+          const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, ctx.chart.height);
+          if (chartColors.value.isDark) {
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)'); // Branco com 20% de opacidade
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');  // Branco transparente
+          } else {
+            gradient.addColorStop(0, 'rgba(33, 33, 33, 0.2)'); // Preto com 20% de opacidade
+            gradient.addColorStop(1, 'rgba(33, 33, 33, 0)');   // Preto transparente
+          }
           return gradient;
         },
         tension: 0.4,
-        pointBackgroundColor: isDark.value ? "#FFFFFF" : color,
-        pointBorderColor: color,
-        pointHoverBackgroundColor: isDark.value ? color : "#FFFFFF",
-        pointHoverBorderColor: color,
-        pointRadius: isDark.value ? 6 : 4,
-        pointHoverRadius: isDark.value ? 8 : 6,
-        borderWidth: isDark.value ? 3 : 2,
+        pointBackgroundColor: chartColors.value.pointBgColor,
+        pointBorderColor: chartColors.value.lineColor,
+        pointHoverBackgroundColor: chartColors.value.pointHoverBgColor,
+        pointHoverBorderColor: chartColors.value.lineColor,
+        pointRadius: 4,
+        pointHoverRadius: 7,
+        borderWidth: 2.5,
       },
     ],
   };
 });
 
-const chartOptions = computed(() => ({
+// Configuração das opções visuais do gráfico (continua o mesmo)
+const chartOptions = computed<ChartOptions<'line'>>(() => ({
   responsive: true,
   maintainAspectRatio: false,
-  interaction: { mode: "nearest", intersect: false },
+  interaction: {
+    mode: 'index',
+    intersect: false,
+  },
   plugins: {
     legend: {
-      display: true,
-      position: "top",
-      labels: {
-        color: isDark.value ? "#FFFFFF" : "#000000",
-        font: { size: 12 },
-        padding: 20,
-      },
+      display: false,
+    },
+    title: {
+        display: true,
+        text: props.title,
+        color: chartColors.value.ticksColor,
+        font: { size: 16 }
     },
     tooltip: {
-      backgroundColor: isDark.value ? "#424242" : "#FFFFFF",
-      titleColor: isDark.value ? "#FFFFFF" : "#000000",
-      bodyColor: isDark.value ? "#E0E0E0" : "#424242",
-      borderColor: isDark.value ? "#616161" : "#E0E0E0",
+      backgroundColor: chartColors.value.tooltipBg,
+      titleColor: chartColors.value.tooltipText,
+      bodyColor: chartColors.value.tooltipText,
+      borderColor: chartColors.value.gridColor,
       borderWidth: 1,
-      padding: 10,
+      padding: 12,
       usePointStyle: true,
       callbacks: {
-        label: (ctx: { parsed: { y: number } }) =>
-          `R$ ${ctx.parsed.y.toFixed(2).replace(".", ",")}`,
+        label: (ctx) => `R$ ${ctx.parsed.y.toFixed(2).replace(".", ",")}`,
       },
     },
   },
   scales: {
     x: {
       grid: {
-        color: isDark.value ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)",
-        drawBorder: false,
+        display: false,
       },
-      ticks: { color: isDark.value ? "#FFFFFF" : "#000000" },
+      ticks: { 
+        color: chartColors.value.ticksColor,
+        font: { size: 11 }
+      },
     },
     y: {
       grid: {
-        color: isDark.value ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)",
-        drawBorder: false,
+        color: chartColors.value.gridColor,
       },
       ticks: {
-        color: isDark.value ? "#FFFFFF" : "#000000",
-        callback: (v) => `R$ ${v}`,
+        color: chartColors.value.ticksColor,
+        callback: (value) => `R$ ${Number(value).toLocaleString('pt-BR')}`,
+        font: { size: 11 }
       },
       beginAtZero: true,
     },
   },
-  elements: { line: { borderJoinStyle: "round", borderCapStyle: "round" } },
 }));
 </script>

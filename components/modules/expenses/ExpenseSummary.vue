@@ -19,7 +19,7 @@
       <v-col cols="12" sm="4" class="pa-1">
         <ExpenseCard
           icon="mdi-cash-multiple"
-          title="Débito do Mês"
+          title="Débito"
           :value="store.currentMonthExpenses"
           color="error"
           :max-value="store.salary || 1"
@@ -76,7 +76,6 @@ function updateSalary(newValue: number) {
   dialog.value = false;
 }
 
-// Adiciona classes dinâmicas baseadas no estado
 function getExpenseCardClass(type: string) {
   const classes = [];
   
@@ -87,7 +86,6 @@ function getExpenseCardClass(type: string) {
       classes.push('bg-error-lighten-5');
     }
   } else if (type === 'debito') {
-    // Always apply error color for 'Débito do Mês' card
     classes.push('bg-error-lighten-5');
   }
   
