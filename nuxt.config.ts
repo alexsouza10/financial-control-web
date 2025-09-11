@@ -2,6 +2,8 @@ import { defineNuxtConfig } from "nuxt/config";
 import vuetify from "vite-plugin-vuetify";
 
 export default defineNuxtConfig({
+  ssr: false,
+
   // Configuração da aplicação
   app: {
     baseURL: "/",
@@ -16,6 +18,10 @@ export default defineNuxtConfig({
         { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
       ],
     },
+  },
+
+  routeRules: {
+    '/': { redirect: '/login' },
   },
 
   // Configuração de módulos
@@ -86,3 +92,4 @@ export default defineNuxtConfig({
     port: 3000
   },
 });
+
