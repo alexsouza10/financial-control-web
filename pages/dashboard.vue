@@ -83,16 +83,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import ExpenseSummary from "~/components/modules/expenses/ExpenseSummary.vue";
 import ExpenseRegisterCard from "~/components/modules/expenses/ExpenseRegisterCard.vue";
 import ExpenseList from "~/components/modules/expenses/ExpenseList.vue";
 import ExpenseDashboard from "~/components/modules/expenses/ExpenseDashboard.vue";
 import { useExpensesStore } from "~/stores/useExpensesStore";
 import { useCategoriesStore } from "~/stores/useCategoriesStore";
+import { useAuthStore } from "~/stores/useAuthStore";
 
 const expensesStore = useExpensesStore();
 const categoriesStore = useCategoriesStore();
+const authStore = useAuthStore();
 
 const isLoading = ref(true);
 const isRegisterDialogOpen = ref(false);
@@ -120,16 +122,49 @@ function handleExpenseSaved() {
   showSnackbar("Gasto registrado com sucesso!");
 }
 
-try {
-  await Promise.all([
-    categoriesStore.fetchAllCategories(),
-    expensesStore.fetchExpenses(),
-    expensesStore.fetchSalary(),
-  ]);
-} catch (error) {
-  console.error("Erro ao carregar dados:", error);
-  showSnackbar("Falha ao carregar dados.", "error", "mdi-alert-circle");
-} finally {
-  isLoading.value = false;
+async function loadData() {
+  const isMockUser = authStore.token === "mock_token_123";
+
+  if (isMockUser) {
+    console.log("Modo de teste ativado. Usando dados mocados.");
+
+    const mockCategories = [
+      { id: "1", name: "Alimentação", icon: "mdi-food" },
+      { id: "2", name: "Transporte", icon: "mdi-train" },
+      { id: "3", name: "Casa", icon: "mdi-home" },
+    ];
+
+    const mockExpenses = [
+      { id: "exp1", description: "Mercado", amount: 150.75, categoryId: "1", date: "2023-01-05T10:00:00Z" },
+      { id: "exp2", description: "Ônibus", amount: 4.50, categoryId: "2", date: "2023-01-06T11:00:00Z" },
+      { id: "exp3", description: "Luz", amount: 85.00, categoryId: "3", date: "2023-01-07T12:00:00Z" },
+    ];
+
+    const mockSalary = { amount: 5000.00 };
+
+    categoriesStore.$patch({ categories: mockCategories });
+    expensesStore.$patch({ expenses: mockExpenses, salary: mockSalary });
+
+    isLoading.value = false;
+  } else {
+    // Lógica de carregamento real da API
+    try {
+      await Promise.all([
+        categoriesStore.fetchAllCategories(),
+        expensesStore.fetchExpenses(),
+        expensesStore.fetchSalary(),
+      ]);
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+      showSnackbar("Falha ao carregar dados.", "error", "mdi-alert-circle");
+    } finally {
+      isLoading.value = false;
+    }
+  }
 }
+
+// Garante que o carregamento de dados ocorra apenas quando o componente estiver montado
+onMounted(async () => {
+  await loadData();
+});
 </script>

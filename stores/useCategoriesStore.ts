@@ -7,8 +7,6 @@ interface Category {
   id: string;
   name: string;
   icon: string;
-  // Adicionar a cor pode ser útil para os gráficos
-  // color?: string; 
 }
 
 interface CategoryPayload {
@@ -49,7 +47,7 @@ export const useCategoriesStore = defineStore("categories", {
         const errorMessage = "Ocorreu um erro: " + (err.response?.data?.title || err.message);
         this.error = errorMessage;
         console.error(errorMessage, err);
-        throw err; // Re-lança o erro para que o componente possa tratá-lo se necessário
+        throw err; 
       } finally {
         this.loading = false;
       }
