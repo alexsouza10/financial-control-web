@@ -288,7 +288,7 @@ import { useTheme, useDisplay } from "vuetify";
 
 type RouteName =
   | "index"
-  | "expenses"
+  | "dashboard"
   | "profile"
   | "settings"
   | "login"
@@ -321,7 +321,7 @@ const emit = defineEmits<Emits>();
 
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { title: "Início", icon: "mdi-home", route: "index" },
-  { title: "Despesas", icon: "mdi-cash-minus", route: "expenses" },
+  { title: "Dashboard", icon: "mdi-cash-minus", route: "dashboard" },
 ];
 
 const USER_MENU_ITEMS: ReadonlyArray<UserMenuItem> = [
