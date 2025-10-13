@@ -1,272 +1,180 @@
 <template>
-  <v-app-bar
-    app
-    flat
-    dark
-    color="primary"
-    height="64"
-    elevate-on-scroll
-    aria-label="Barra de navegação principal"
-  >
+  <v-app-bar app flat color="primary" height="64" elevate-on-scroll>
     <v-app-bar-nav-icon
       v-if="isMobile"
       @click="toggleMobileMenu"
-      aria-label="Abrir menu de navegação"
+      aria-label="Abrir menu"
     >
       <v-icon>mdi-menu</v-icon>
     </v-app-bar-nav-icon>
 
+    <!-- Logo / Título -->
     <v-toolbar-title
-      class="d-flex align-center color-black text-decoration-none"
+      class="d-flex align-center cursor-pointer"
       @click="goHome"
       role="button"
       tabindex="0"
       @keydown.enter="goHome"
       @keydown.space.prevent="goHome"
     >
-      <v-hover v-slot="{ isHovering, props }">
-        <div v-bind="props" class="d-flex align-center">
-          <v-icon
-            :color="!isHovering ? 'black' : 'white'"
-            class="mr-1"
-            size="x-large"
-            >mdi-cash-multiple</v-icon
-          >
-          <span
-            class="font-weight-bold text-truncate text-black text-h6 d-none d-sm-block"
-            >Gestão de Gastos</span
-          >
-          <span
-            class="font-weight-bold text-truncate text-black text-subtitle-1 d-sm-none"
-            >G. Gastos</span
-          >
-        </div>
-      </v-hover>
+      <v-icon class="me-2" size="28">mdi-cash-multiple</v-icon>
+      <span class="font-weight-bold text-truncate"> Gestão de Gastos </span>
     </v-toolbar-title>
+
     <v-spacer />
 
+    <!-- Links desktop -->
     <template v-if="isDesktop">
       <v-btn
         v-for="item in navItems"
         :key="item.route"
         :to="{ name: item.route }"
         variant="text"
-        color="black"
         :class="{ 'v-btn--active': isRoute(item.route) }"
-        :aria-current="isRoute(item.route) ? 'page' : undefined"
         min-width="auto"
-        density="comfortable"
       >
-        <v-icon :icon="item.icon" size="20" class="mr-1 d-none d-lg-inline" />
-        <span class="text-body-2 d-none d-lg-inline">{{ item.title }}</span>
+        <v-icon left>{{ item.icon }}</v-icon>
+        <span>{{ item.title }}</span>
       </v-btn>
     </template>
 
-    <div class="d-flex align-center">
-      <v-menu offset-y min-width="350" :close-on-content-click="false">
-        <template #activator="{ props: menuProps }">
-          <v-btn
-            v-bind="menuProps"
-            icon
-            variant="text"
-            :aria-label="`${unreadNotifications || 'Nenhuma'} notificação${
-              unreadNotifications !== 1 ? 's' : ''
-            }`"
-            size="small"
+    <!-- Notificações -->
+    <v-menu offset-y min-width="350" :close-on-content-click="false">
+      <template #activator="{ props: menuProps }">
+        <v-btn
+          v-bind="menuProps"
+          icon
+          :aria-label="`${unreadNotifications || 'Nenhuma'} notificação(s)`"
+        >
+          <v-badge
+            v-if="unreadNotifications"
+            :content="unreadNotifications"
+            color="error"
+            bordered
+            :dot="isXs"
           >
-            <v-badge
-              v-if="unreadNotifications"
-              :content="unreadNotifications"
-              color="error"
-              offset-x="4"
-              offset-y="4"
-              bordered
-              :dot="isXs"
-            >
-              <v-icon
-                size="24"
-                :color="$route.name === 'notifications' ? 'white' : ''"
-                >{{
-                  unreadNotifications ? "mdi-bell-ring" : "mdi-bell-outline"
-                }}</v-icon
-              >
-            </v-badge>
-            <v-icon
-              v-else
-              size="24"
-              :color="$route.name === 'notifications' ? 'white' : ''"
-              >mdi-bell-outline</v-icon
-            >
-          </v-btn>
-        </template>
-
-        <v-card elevation="4" style="max-height: 80vh; overflow-y: auto">
-          <v-card-title
-            class="d-flex align-center justify-space-between px-4 py-3"
-          >
-            <span class="text-h6">Notificações</span>
-            <v-btn
-              v-if="unreadNotifications"
-              variant="text"
-              size="small"
-              color="primary"
-              @click="markAllAsRead"
-              >Marcar todas como lidas</v-btn
-            >
-          </v-card-title>
-          <v-divider />
-          <v-card-text class="pa-0">
-            <v-list v-if="notifications.length" class="pa-0" density="compact">
-              <v-list-item
-                v-for="(notification, index) in notifications"
-                :key="index"
-                :title="notification.title"
-                :subtitle="notification.message"
-                :prepend-icon="notification.icon || 'mdi-information'"
-                :color="notification.read ? '' : 'primary'"
-                @click="handleNotificationClick(notification)"
-              >
-                <template v-slot:append>
-                  <v-tooltip text="Marcar como lida" location="left">
-                    <template v-slot:activator="{ props: tooltipProps }">
-                      <v-btn
-                        v-bind="tooltipProps"
-                        icon
-                        variant="text"
-                        size="x-small"
-                        @click.stop="markAsRead(notification.id)"
-                      >
-                        <v-icon size="18">mdi-check</v-icon>
-                      </v-btn>
-                    </template>
-                  </v-tooltip>
-                </template>
-              </v-list-item>
-            </v-list>
-            <v-alert
-              v-else
-              type="info"
-              variant="tonal"
-              class="ma-4"
-              text="Nenhuma notificação nova"
-            />
-          </v-card-text>
-          <v-divider />
-          <v-card-actions class="px-4 py-2">
-            <v-btn
-              variant="text"
-              color="primary"
-              block
-              @click="$router.push('/notifications')"
-              >Ver todas as notificações</v-btn
-            >
-          </v-card-actions>
-        </v-card>
-      </v-menu>
-
-      <v-tooltip
-        :text="
-          isDark ? 'Alternar para tema claro' : 'Alternar para tema escuro'
-        "
-        location="bottom"
-      >
-        <template #activator="{ props: tooltipProps }">
-          <v-btn
-            v-bind="tooltipProps"
-            icon
-            variant="text"
-            :aria-label="
-              isDark ? 'Alternar para tema claro' : 'Alternar para tema escuro'
-            "
-            @click="toggleTheme"
-            size="small"
-          >
-            <v-icon size="24">{{
-              isDark ? "mdi-weather-sunny" : "mdi-weather-night"
+            <v-icon>{{
+              unreadNotifications ? "mdi-bell-ring" : "mdi-bell-outline"
             }}</v-icon>
-          </v-btn>
-        </template>
-      </v-tooltip>
+          </v-badge>
+          <v-icon v-else>mdi-bell-outline</v-icon>
+        </v-btn>
+      </template>
 
-      <v-menu
-        v-model="userMenu"
-        location="bottom end"
-        min-width="200"
-        offset="10"
-      >
-        <template #activator="{ props: menuProps }">
+      <!-- Conteúdo do menu de notificações -->
+      <v-card elevation="4" max-height="80vh" style="overflow-y:auto">
+        <v-card-title class="d-flex justify-space-between align-center">
+          <span class="text-h6">Notificações</span>
           <v-btn
-            v-bind="menuProps"
+            v-if="unreadNotifications"
             variant="text"
-            aria-label="Menu do usuário"
-            aria-haspopup="menu"
-            :aria-expanded="userMenu ? 'true' : 'false'"
+            size="small"
+            color="primary"
+            @click="markAllAsRead"
           >
-            <v-avatar size="36" color="primary"
-              ><v-icon size="20" color="black"
-                >mdi-account-circle</v-icon
-              ></v-avatar
-            >
+            Marcar todas como lidas
           </v-btn>
-        </template>
-
-        <v-card min-width="200" elevation="4">
-          <v-list density="compact" role="menu">
+        </v-card-title>
+        <v-divider />
+        <v-card-text class="pa-0">
+          <v-list v-if="notifications.length" density="compact">
             <v-list-item
-              v-for="(item, index) in userMenuItems"
-              :key="index"
-              :prepend-icon="item.icon"
-              @click="handleUserMenuItemClick(item.action)"
-              role="menuitem"
-              :aria-label="item.title"
-              :class="{ 'text-error': item.isDanger }"
+              v-for="n in notifications"
+              :key="n.id"
+              :color="!n.read ? 'primary lighten-5' : ''"
+              @click="handleNotificationClick(n)"
             >
-              <v-list-item-title :class="{ 'text-error': item.isDanger }">{{
-                item.title
-              }}</v-list-item-title>
+              <v-list-item-icon>
+                <v-icon>{{ n.icon || "mdi-information" }}</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title>{{ n.title }}</v-list-item-title>
+                <v-list-item-subtitle>{{ n.message }}</v-list-item-subtitle>
+              </v-list-item-content>
+              <v-list-item-action>
+                <v-btn icon size="x-small" @click.stop="markAsRead(n.id)">
+                  <v-icon size="18">mdi-check</v-icon>
+                </v-btn>
+              </v-list-item-action>
             </v-list-item>
           </v-list>
-        </v-card>
-      </v-menu>
-    </div>
-  </v-app-bar>
+          <v-alert v-else type="info" variant="tonal" class="ma-4">
+            Nenhuma notificação nova
+          </v-alert>
+        </v-card-text>
+        <v-divider />
+        <v-card-actions>
+          <v-btn
+            variant="text"
+            color="primary"
+            block
+            @click="$router.push('/notifications')"
+          >
+            Ver todas as notificações
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-menu>
 
-  <v-navigation-drawer
-    v-model="drawer"
-    app
-    temporary
-    location="right"
-    width="280"
-    aria-label="Menu lateral móvel"
-    @transitionend="onDrawerTransitionEnd"
-  >
-    <v-toolbar flat color="primary" dark>
-      <v-toolbar-title class="text-h6">Menu</v-toolbar-title>
-      <v-spacer />
-      <v-btn icon @click="drawer = false" aria-label="Fechar menu"
-        ><v-icon>mdi-close</v-icon></v-btn
-      >
-    </v-toolbar>
+    <!-- Toggle tema -->
+    <v-tooltip :text="isDark ? 'Tema claro' : 'Tema escuro'">
+      <template #activator="{ props: tooltipProps }">
+        <v-btn v-bind="tooltipProps" icon @click="toggleTheme">
+          <v-icon size="24">{{
+            isDark ? "mdi-weather-sunny" : "mdi-weather-night"
+          }}</v-icon>
+        </v-btn>
+      </template>
+    </v-tooltip>
 
-    <v-divider />
+    <!-- Menu do usuário -->
+    <v-menu v-model="userMenu" location="bottom end" min-width="200">
+      <template #activator="{ props: menuProps }">
+        <v-btn v-bind="menuProps" variant="text" aria-label="Menu do usuário">
+          <v-avatar size="36" color="primary">
+            <v-icon size="20">mdi-account-circle</v-icon>
+          </v-avatar>
+        </v-btn>
+      </template>
+      <v-card min-width="200" elevation="4">
+        <v-list density="compact" role="menu">
+          <v-list-item
+            v-for="item in userMenuItems"
+            :key="item.title"
+            @click="handleUserMenuItemClick(item.action)"
+            :class="{ 'text-error': item.isDanger }"
+            role="menuitem"
+          >
+            <v-list-item-icon
+              ><v-icon>{{ item.icon }}</v-icon></v-list-item-icon
+            >
+            <v-list-item-title>{{ item.title }}</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-card>
+    </v-menu>
 
-    <v-list nav dense>
-      <v-list-item
-        v-for="item in navItems"
-        :key="item.route"
-        :to="{ name: item.route }"
-        @click="closeMobileMenu"
-        :class="{ 'v-list-item--active': isRoute(item.route) }"
-        :aria-current="isRoute(item.route) ? 'page' : undefined"
-      >
-        <template #prepend>
-          <v-icon :icon="item.icon" class="me-3" />
-        </template>
-        <v-list-item-title>{{ item.title }}</v-list-item-title>
-      </v-list-item>
-    </v-list>
-
-    <template #append>
+    <!-- Drawer móvel -->
+    <v-navigation-drawer v-model="drawer" app temporary right width="280">
+      <v-toolbar flat color="primary" dark>
+        <v-toolbar-title>Menu</v-toolbar-title>
+        <v-spacer />
+        <v-btn icon @click="drawer = false"><v-icon>mdi-close</v-icon></v-btn>
+      </v-toolbar>
+      <v-divider />
+      <v-list nav dense>
+        <v-list-item
+          v-for="item in navItems"
+          :key="item.route"
+          :to="{ name: item.route }"
+          @click="closeMobileMenu"
+        >
+          <v-list-item-icon
+            ><v-icon>{{ item.icon }}</v-icon></v-list-item-icon
+          >
+          <v-list-item-title>{{ item.title }}</v-list-item-title>
+        </v-list-item>
+      </v-list>
       <div class="pa-4">
         <v-btn
           block
@@ -274,11 +182,12 @@
           variant="outlined"
           @click="logoutAndRedirect"
           prepend-icon="mdi-logout"
-          >Sair</v-btn
         >
+          Sair
+        </v-btn>
       </div>
-    </template>
-  </v-navigation-drawer>
+    </v-navigation-drawer>
+  </v-app-bar>
 </template>
 
 <script setup lang="ts">
@@ -320,8 +229,8 @@ interface Emits {
 const emit = defineEmits<Emits>();
 
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
-  { title: "Início", icon: "mdi-home", route: "index" },
-  { title: "Dashboard", icon: "mdi-cash-minus", route: "dashboard" },
+  // { title: "Início", icon: "mdi-home", route: "index" },
+  { title: "Dashboard", icon: "mdi-chart-box", route: "dashboard" },
 ];
 
 const USER_MENU_ITEMS: ReadonlyArray<UserMenuItem> = [

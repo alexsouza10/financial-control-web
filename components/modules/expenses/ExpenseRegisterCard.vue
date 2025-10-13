@@ -1,5 +1,5 @@
 <template>
-  <v-card rounded="xl" elevation="4" @keydown.esc.stop="closeDialog">
+  <v-card rounded="md" elevation="4" @keydown.esc.stop="closeDialog">
     <v-card-title
       class="text-h6 d-flex align-center justify-space-between bg-primary-gradient"
     >
@@ -304,7 +304,7 @@
               class="submit-btn"
               :loading="isSavingExpense"
               size="large"
-              rounded="lg"
+              rounded="md"
               variant="flat"
             >
               <v-icon start>{{ submitButtonIcon }}</v-icon>

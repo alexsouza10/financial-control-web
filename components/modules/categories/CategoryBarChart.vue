@@ -2,18 +2,33 @@
   <v-card elevation="3">
     <v-card-title class="justify-center">{{ title }}</v-card-title>
     <v-card-text class="d-flex" style="height: 360px">
-      <Pie :data="chartData" :options="chartOptions" />
+      <Bar :data="chartData" :options="chartOptions" />
     </v-card-text>
   </v-card>
 </template>
 
 <script setup lang="ts">
-import { Pie } from "vue-chartjs";
-import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement } from "chart.js";
+import { Bar } from "vue-chartjs";
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+} from "chart.js";
 import { computed, defineProps } from "vue";
 import { useCategoriesStore } from "~/stores/useCategoriesStore";
 
-ChartJS.register(Title, Tooltip, Legend, ArcElement);
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement
+);
 
 interface CategoryData {
   category: string;
@@ -50,7 +65,7 @@ const backgroundColors = [
   "#9575cd",
   "#a1887f",
   "#aed581",
-  "#fff176", 
+  "#fff176",
   "#81d4fa",
   "#f8bbd0",
   "#d1c4e9",
@@ -80,12 +95,6 @@ const chartData = computed(() => {
           label: "Despesas por Categoria",
           data: [1],
           backgroundColor: ["#e0e0e0"],
-          hoverOffset: 0,
-          tooltip: {
-            callbacks: {
-              label: () => "Nenhuma despesa no período",
-            },
-          },
         },
       ],
     };
@@ -98,7 +107,6 @@ const chartData = computed(() => {
         label: props.title || "Despesas por Categoria",
         data: dataValues,
         backgroundColor: backgroundColors,
-        hoverOffset: 10,
       },
     ],
   };
@@ -109,8 +117,8 @@ const chartOptions = {
   maintainAspectRatio: false,
   plugins: {
     legend: {
-      display: true,
-      position: "right",
+      display: false,
+      position: "right" as const,
       align: "start" as const,
       labels: {
         boxWidth: 12,
@@ -121,7 +129,7 @@ const chartOptions = {
       callbacks: {
         label: function (context: any) {
           const label = context.label || "";
-          const value = context.parsed;
+          const value = context.parsed.y;
           const total = context.dataset.data.reduce(
             (a: number, b: number) => a + b,
             0
@@ -132,6 +140,11 @@ const chartOptions = {
             .replace(".", ",")} (${percentage}%)`;
         },
       },
+    },
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
     },
   },
 };

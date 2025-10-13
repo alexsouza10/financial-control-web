@@ -6,7 +6,7 @@
     persistent
     scrollable
   >
-    <v-card rounded="lg">
+    <v-card rounded="md">
       <v-toolbar color="primary" flat rounded="0">
         <v-toolbar-title class="text-h6 text-white">
           {{ isEditing ? 'Editar Categoria' : 'Adicionar Nova Categoria' }}

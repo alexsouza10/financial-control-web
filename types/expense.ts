@@ -7,6 +7,7 @@ export interface Expense {
   card: string;
   installments: number;
   description: string;
+  paid?: boolean;
 }
 
 export interface CreateExpensePayload {
