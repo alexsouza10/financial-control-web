@@ -31,23 +31,23 @@ export const useExpensesStore = defineStore("expenses", {
 
     currentMonthExpenses: (state: ExpensesState): number => {
       const now = new Date();
-      const currentMonth = now.getMonth() + 1; 
+      const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
-      
+
       const total = state.expenses.reduce((sum: number, expense: Expense) => {
-        try {          
+        try {
           const expenseDate = new Date(expense.date);
           const expenseMonth = expenseDate.getMonth() + 1;
           const expenseYear = expenseDate.getFullYear();
-          
+
           if (expenseMonth === currentMonth && expenseYear === currentYear) {
             return sum + expense.value;
           }
         } catch (error) {
-          console.error('❌ Error processing expense:', {
+          console.error("❌ Error processing expense:", {
             id: expense.id,
             date: expense.date,
-            error: error instanceof Error ? error.message : String(error)
+            error: error instanceof Error ? error.message : String(error),
           });
         }
         return sum;
@@ -61,28 +61,24 @@ export const useExpensesStore = defineStore("expenses", {
       const currentDay = now.getDate();
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
-      
-      // Filtra apenas os gastos do mês atual
-      const currentMonthExpenses = this.expenses.filter(expense => {
+      const currentMonthExpenses = this.expenses.filter((expense) => {
         try {
           const expenseDate = new Date(expense.date);
-          return (expenseDate.getMonth() + 1) === currentMonth && 
-                 expenseDate.getFullYear() === currentYear;
+          return (
+            expenseDate.getMonth() + 1 === currentMonth &&
+            expenseDate.getFullYear() === currentYear
+          );
         } catch {
           return false;
         }
       });
-      
+
       if (currentMonthExpenses.length === 0) return 0;
-      
-      // Soma total dos gastos do mês
-      const monthlyTotal = currentMonthExpenses.reduce((sum, exp) => sum + exp.value, 0);
-      
-      // Calcula a média baseada nos dias decorridos do mês
-      // Evita divisão por zero e garante pelo menos 1 dia
+      const monthlyTotal = currentMonthExpenses.reduce(
+        (sum, exp) => sum + exp.value,
+        0
+      );
       const daysElapsed = Math.max(1, currentDay);
-      
-      // Retorna a média diária baseada nos dias decorridos
       return monthlyTotal / daysElapsed;
     },
   },
@@ -109,7 +105,7 @@ export const useExpensesStore = defineStore("expenses", {
       this.loading = true;
       this.error = null;
       try {
-        const response = await $api.post<Expense>("/Expenses", expensePayload );
+        const response = await $api.post<Expense>("/Expenses", expensePayload);
         this.expenses.push(response.data);
       } catch (err: any) {
         this.error =
@@ -126,8 +122,15 @@ export const useExpensesStore = defineStore("expenses", {
       this.loading = true;
       this.error = null;
       try {
-        await $api.put<Expense>(`/Expenses/${id}`, payload );
-        await this.fetchExpenses();
+        await $api.put<Expense>(`/Expenses/${id}`, payload);
+        const index = this.expenses.findIndex((exp) => exp.id === id);
+        if (index !== -1) {
+          this.expenses[index] = {
+            ...this.expenses[index],
+            ...payload,
+            id: id,
+          } as Expense;
+        }
       } catch (err: any) {
         this.error =
           "Failed to update expense: " + (err.response?.data || err.message);

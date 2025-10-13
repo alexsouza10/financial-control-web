@@ -1,7 +1,7 @@
 <template>
   <v-card
     :class="[customClass]"
-    rounded="xl"
+    rounded="md"
     elevation="2"
     hover
     transition="scale-transition"

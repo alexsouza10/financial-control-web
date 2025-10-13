@@ -1,6 +1,7 @@
 <template>
-  <v-container fluid class="pa-4">
-    <v-card class="mb-6 pa-4 rounded-xl elevation-3" height="auto">
+  <v-container fluid class="pa-2 mt-4" style="max-width: 1600px">
+    <!-- Cabeçalho -->
+    <v-card class="mb-6 pa-4 rounded-md elevation-2">
       <v-row justify="center" align="center">
         <v-col cols="12" md="6" class="text-center">
           <v-row class="justify-center align-center mb-2">
@@ -16,14 +17,17 @@
       </v-row>
     </v-card>
 
+    <!-- Skeletons enquanto carrega -->
     <div v-if="isLoading">
       <v-skeleton-loader type="image" height="110" class="mb-6" />
       <v-skeleton-loader type="list-item-avatar-two-line@5" />
     </div>
 
+    <!-- Conteúdo principal -->
     <v-slide-y-transition group appear v-else>
       <v-row>
-        <v-col cols="12" md="4">
+        <!-- Coluna esquerda: resumo e lista -->
+        <v-col cols="12" md="5">
           <section class="mb-6">
             <ExpenseSummary />
             <v-row class="mb-4" justify="center" align="center">
@@ -31,7 +35,7 @@
                 <v-btn
                   color="primary"
                   large
-                  rounded="pill"
+                  rounded="md"
                   elevation="6"
                   prepend-icon="mdi-plus-circle-outline"
                   @click="isRegisterDialogOpen = true"
@@ -44,12 +48,14 @@
           <ExpenseList />
         </v-col>
 
-        <v-col cols="12" md="8">
+        <!-- Coluna direita: dashboard -->
+        <v-col cols="12" md="7">
           <ExpenseDashboard />
         </v-col>
       </v-row>
     </v-slide-y-transition>
 
+    <!-- Botão flutuante para mobile -->
     <v-btn
       v-if="$vuetify.display.smAndDown"
       icon="mdi-plus"
@@ -62,6 +68,7 @@
       @click="isRegisterDialogOpen = true"
     />
 
+    <!-- Dialog de registro de gasto -->
     <v-dialog v-model="isRegisterDialogOpen" max-width="700" scrollable>
       <ExpenseRegisterCard
         @close="isRegisterDialogOpen = false"
@@ -69,12 +76,13 @@
       />
     </v-dialog>
 
+    <!-- Snackbar -->
     <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
       timeout="3000"
       location="top right"
-      rounded="pill"
+      rounded="md"
     >
       <v-icon start>{{ snackbar.icon }}</v-icon>
       {{ snackbar.message }}
@@ -90,11 +98,9 @@ import ExpenseList from "~/components/modules/expenses/ExpenseList.vue";
 import ExpenseDashboard from "~/components/modules/expenses/ExpenseDashboard.vue";
 import { useExpensesStore } from "~/stores/useExpensesStore";
 import { useCategoriesStore } from "~/stores/useCategoriesStore";
-import { useAuthStore } from "~/stores/useAuthStore";
 
 const expensesStore = useExpensesStore();
 const categoriesStore = useCategoriesStore();
-const authStore = useAuthStore();
 
 const isLoading = ref(true);
 const isRegisterDialogOpen = ref(false);
@@ -120,51 +126,24 @@ function showSnackbar(
 function handleExpenseSaved() {
   isRegisterDialogOpen.value = false;
   showSnackbar("Gasto registrado com sucesso!");
+  refreshData();
 }
 
-async function loadData() {
-  const isMockUser = authStore.token === "mock_token_123";
-
-  if (isMockUser) {
-    console.log("Modo de teste ativado. Usando dados mocados.");
-
-    const mockCategories = [
-      { id: "1", name: "Alimentação", icon: "mdi-food" },
-      { id: "2", name: "Transporte", icon: "mdi-train" },
-      { id: "3", name: "Casa", icon: "mdi-home" },
-    ];
-
-    const mockExpenses = [
-      { id: "exp1", description: "Mercado", amount: 150.75, categoryId: "1", date: "2023-01-05T10:00:00Z" },
-      { id: "exp2", description: "Ônibus", amount: 4.50, categoryId: "2", date: "2023-01-06T11:00:00Z" },
-      { id: "exp3", description: "Luz", amount: 85.00, categoryId: "3", date: "2023-01-07T12:00:00Z" },
-    ];
-
-    const mockSalary = { amount: 5000.00 };
-
-    categoriesStore.$patch({ categories: mockCategories });
-    expensesStore.$patch({ expenses: mockExpenses, salary: mockSalary });
-
+async function refreshData() {
+  isLoading.value = true;
+  try {
+    await Promise.all([
+      categoriesStore.fetchAllCategories(),
+      expensesStore.fetchExpenses(),
+      expensesStore.fetchSalary(),
+    ]);
+  } catch (error) {
+    console.error("Erro ao carregar dados:", error);
+    showSnackbar("Falha ao carregar dados.", "error", "mdi-alert-circle");
+  } finally {
     isLoading.value = false;
-  } else {
-    // Lógica de carregamento real da API
-    try {
-      await Promise.all([
-        categoriesStore.fetchAllCategories(),
-        expensesStore.fetchExpenses(),
-        expensesStore.fetchSalary(),
-      ]);
-    } catch (error) {
-      console.error("Erro ao carregar dados:", error);
-      showSnackbar("Falha ao carregar dados.", "error", "mdi-alert-circle");
-    } finally {
-      isLoading.value = false;
-    }
   }
 }
 
-// Garante que o carregamento de dados ocorra apenas quando o componente estiver montado
-onMounted(async () => {
-  await loadData();
-});
+onMounted(refreshData);
 </script>

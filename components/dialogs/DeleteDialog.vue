@@ -5,7 +5,7 @@
     max-width="450"
     persistent
   >
-    <v-card rounded="lg">
+    <v-card rounded="md">
       <v-card-title class="text-h6 text-center text-red-darken-2 py-4">
         <v-icon left class="mr-2">mdi-alert-circle</v-icon>
         Confirmar Exclusão

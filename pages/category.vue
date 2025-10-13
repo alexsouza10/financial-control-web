@@ -21,7 +21,7 @@
           @click="openAddModal"
           size="large"
           class="text-capitalize"
-          rounded="lg"
+          rounded="md"
         >
           Adicionar Nova Categoria
         </v-btn>
@@ -30,7 +30,7 @@
 
     <v-row>
       <v-col cols="12">
-        <v-card flat rounded="lg" class="pa-4 custom-card">
+        <v-card flat rounded="md" class="pa-4 custom-card">
           <v-overlay
             :model-value="loading"
             class="align-center justify-center"
@@ -134,7 +134,7 @@
       :color="snackbarColor"
       timeout="3000"
       location="top right"
-      rounded="pill"
+      rounded="md"
       class="mt-4"
     >
       <div class="d-flex align-center">
