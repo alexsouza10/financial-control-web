@@ -1,5 +1,5 @@
 <template>
-  <v-sheet class="mb-4 pa-2 rounded-md" color="transparent">
+  <v-sheet class="mb-4 mt-1 pa-2 rounded-md" color="transparent">
     <v-row no-gutters>
       <!-- Salário -->
       <v-col cols="12" sm="4" class="pa-1">

@@ -142,7 +142,7 @@ const cardColors = computed(() => ({
 const getAvatarColor = computed(() => {
   const t = props.title.toLowerCase();
   if (t.includes("salário") || t.includes("salario")) return "success";
-  if (t.includes("total")) return "error";
+  if (t.includes("débito")) return "error";
   if (t.includes("saldo")) return "warning";
   return "primary";
 });

@@ -176,86 +176,6 @@
         </v-card>
       </v-col>
     </v-row>
-
-    <v-card variant="outlined" class="position-relative">
-      <v-overlay
-        v-model="loading"
-        contained
-        class="align-center justify-center"
-        :persistent="true"
-      >
-        <v-progress-circular color="primary" indeterminate size="64" />
-      </v-overlay>
-
-      <v-card-title class="d-flex align-center justify-space-between flex-wrap">
-        <div>
-          <v-icon start>mdi-tag-multiple-outline</v-icon>
-          <span class="font-weight-medium">Despesas por Categoria</span>
-        </div>
-        <v-btn
-          variant="text"
-          color="primary"
-          @click="showCategoryTable = !showCategoryTable"
-        >
-          {{ showCategoryTable ? "Ocultar" : "Detalhar" }}
-          <v-icon end>{{
-            showCategoryTable ? "mdi-chevron-up" : "mdi-chevron-down"
-          }}</v-icon>
-        </v-btn>
-      </v-card-title>
-
-      <v-divider />
-
-      <v-expand-transition>
-        <div v-show="showCategoryTable">
-          <v-empty-state
-            v-if="!loading && !categoryBreakdown.length"
-            icon="mdi-database-off-outline"
-            title="Nenhuma categoria com gastos"
-            text="Não há despesas para exibir no período selecionado."
-            class="py-8"
-          />
-          <v-data-table
-            v-else
-            :headers="categoryHeaders"
-            :items="categoryBreakdown.filter((item) => item.amount > 0)"
-            :items-per-page="5"
-            density="compact"
-            :hide-default-footer="categoryBreakdown.length <= 5"
-            class="pa-2"
-          >
-            <template #[`item.category`]="{ item }">
-              <v-chip
-                :color="getCategoryColor(item.category)"
-                size="small"
-                label
-                variant="flat"
-              >
-                {{ item.category }}
-              </v-chip>
-            </template>
-            <template #[`item.amount`]="{ item }">
-              <span class="font-weight-medium">{{
-                formatCurrency(item.amount)
-              }}</span>
-            </template>
-            <template #[`item.percentage`]="{ item }">
-              <v-progress-linear
-                :model-value="item.percentage"
-                :color="getCategoryColor(item.category)"
-                height="20"
-                rounded
-                stream
-              >
-                <strong class="text-white text-caption"
-                  >{{ Math.round(item.percentage) }}%</strong
-                >
-              </v-progress-linear>
-            </template>
-          </v-data-table>
-        </div>
-      </v-expand-transition>
-    </v-card>
   </v-container>
 </template>
 
@@ -279,7 +199,6 @@ import CategoryBarChart from "~/components/modules/categories/CategoryBarChart.v
 const expensesStore = useExpensesStore();
 const categoriesStore = useCategoriesStore();
 const loading = ref(false);
-const showCategoryTable = ref(false);
 const groupBy = ref<"day" | "week" | "month">("day");
 const selectedPeriod = ref("30d");
 const startDate = ref("");
@@ -317,39 +236,6 @@ const formatCurrency = (value: number) =>
   }) ?? "R$ 0,00";
 const formatDate = (date: string | Date, fmt = "dd/MM/yyyy") =>
   date ? format(new Date(date), fmt, { locale: ptBR }) : "";
-
-const getCategoryColor = (categoryName: string) => {
-  const colors = [
-    "primary",
-    "secondary",
-    "success",
-    "error",
-    "warning",
-    "info",
-    "pink",
-    "purple",
-    "indigo",
-    "blue",
-    "cyan",
-    "teal",
-    "green",
-    "lime",
-    "yellow",
-    "amber",
-    "orange",
-    "brown",
-    "grey",
-    "deep-purple",
-  ];
-  return colors[
-    Math.abs(
-      [...categoryName].reduce(
-        (hash, char) => char.charCodeAt(0) + ((hash << 5) - hash),
-        0
-      )
-    ) % colors.length
-  ];
-};
 
 const periodFunctions: Record<string, () => { start: Date; end: Date }> = {
   "7d": () => ({ start: subDays(new Date(), 7), end: new Date() }),
@@ -458,13 +344,6 @@ const barChartData = computed(() => {
     .map(([category, amount]) => ({ category, amount }))
     .sort((a, b) => b.amount - a.amount);
 });
-const categoryBreakdown = computed(() => {
-  const total = barChartData.value.reduce((sum, i) => sum + i.amount, 0);
-  return barChartData.value.map((i) => ({
-    ...i,
-    percentage: total ? (i.amount / total) * 100 : 0,
-  }));
-});
 
 const summaryStats = computed(() => {
   const current = filteredExpenses.value;
@@ -494,12 +373,6 @@ const summaryStats = computed(() => {
   ];
 });
 
-const categoryHeaders = [
-  { title: "Categoria", key: "category", sortable: true, align: "start" },
-  { title: "Valor Total", key: "amount", align: "start" },
-  { title: "Percentual", key: "percentage", sortable: false, align: "start" },
-];
-
 const refreshData = async () => {
   loading.value = true;
   try {
@@ -511,8 +384,6 @@ const refreshData = async () => {
     loading.value = false;
   }
 };
-const toggleCategoryTable = () =>
-  (showCategoryTable.value = !showCategoryTable.value);
 
 onMounted(refreshData);
 </script>

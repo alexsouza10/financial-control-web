@@ -1,21 +1,23 @@
 <template>
   <v-container fluid class="pa-2 mt-4" style="max-width: 1600px">
     <!-- Cabeçalho -->
-    <v-card class="mb-6 pa-4 rounded-md elevation-2">
-      <v-row justify="center" align="center">
-        <v-col cols="12" md="6" class="text-center">
-          <v-row class="justify-center align-center mb-2">
-            <v-icon color="primary" size="30" class="me-2">
-              mdi-finance
-            </v-icon>
-            <h2 class="text-h5 font-weight-medium mb-0">Painel Financeiro</h2>
-          </v-row>
-          <p class="text-body-2">
-            Organize seus gastos e mantenha suas finanças sob controle.
-          </p>
-        </v-col>
-      </v-row>
-    </v-card>
+    <v-col cols="12">
+      <v-card class="pa-4 rounded-md elevation-2">
+        <v-row justify="center" align="center">
+          <v-col cols="12" md="6" class="text-center">
+            <v-row class="justify-center align-center mb-2">
+              <v-icon color="primary" size="30" class="me-2">
+                mdi-finance
+              </v-icon>
+              <h2 class="text-h5 font-weight-medium mb-0">Painel Financeiro</h2>
+            </v-row>
+            <p class="text-body-2">
+              Organize seus gastos e mantenha suas finanças sob controle.
+            </p>
+          </v-col>
+        </v-row>
+      </v-card>
+    </v-col>
 
     <!-- Skeletons enquanto carrega -->
     <div v-if="isLoading">
@@ -30,7 +32,7 @@
         <v-col cols="12" md="5">
           <section class="mb-6">
             <ExpenseSummary />
-            <v-row class="mb-4" justify="center" align="center">
+            <v-row class="mb-2" justify="center" align="center">
               <v-col cols="auto">
                 <v-btn
                   color="primary"
@@ -54,19 +56,6 @@
         </v-col>
       </v-row>
     </v-slide-y-transition>
-
-    <!-- Botão flutuante para mobile -->
-    <v-btn
-      v-if="$vuetify.display.smAndDown"
-      icon="mdi-plus"
-      color="primary"
-      fixed
-      bottom
-      right
-      large
-      class="ma-4 elevation-8"
-      @click="isRegisterDialogOpen = true"
-    />
 
     <!-- Dialog de registro de gasto -->
     <v-dialog v-model="isRegisterDialogOpen" max-width="700" scrollable>
