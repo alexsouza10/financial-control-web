@@ -49,14 +49,22 @@
                 <td>{{ user.username }}</td>
                 <td>{{ user.email }}</td>
                 <td class="text-center">
-                  <v-tooltip text="Ativar/Desativar (Implementar)">
+                  <v-tooltip
+                    :text="
+                      user.isActive ? 'Desativar Usuário' : 'Ativar Usuário'
+                    "
+                  >
                     <template v-slot:activator="{ props }">
                       <v-btn
                         v-bind="props"
-                        icon="mdi-toggle-switch"
+                        :icon="
+                          user.isActive
+                            ? 'mdi-toggle-switch'
+                            : 'mdi-toggle-switch-off-outline'
+                        "
                         variant="text"
-                        color="grey"
-                        @click="toggleUserStatus(user.id, true)"
+                        :color="user.isActive ? 'primary' : 'grey'"
+                        @click="toggleUserStatus(user.id, !user.isActive)"
                       ></v-btn>
                     </template>
                   </v-tooltip>
@@ -87,10 +95,6 @@ import { onMounted } from "vue";
 import { useAuthStore } from "~/stores/useAuthStore";
 import { useAdminStore } from "~/stores/useAdminStore";
 import { navigateTo } from "#app";
-
-definePageMeta({
-  middleware: ["auth"],
-});
 
 const authStore = useAuthStore();
 const adminStore = useAdminStore();

@@ -214,7 +214,7 @@
           </v-col>
 
           <!-- Descrição -->
-          <!-- <v-col cols="12">
+          <v-col cols="12">
             <v-text-field
               v-model="description"
               label="Descrição (Opcional)"
@@ -222,7 +222,7 @@
               variant="outlined"
               density="compact"
             />
-          </v-col> -->
+          </v-col>
 
           <!-- Pagamento -->
           <v-col cols="12" md="6">
@@ -940,6 +940,7 @@ async function submitExpense() {
       const payload = {
         CategoryId: categoryId,
         Value: total / installmentsCount,
+        description: description.value || "",
         PaymentMethod: selectedPaymentMethod.value,
         Card: isCreditCardPayment.value ? selectedCard.value : null,
         Installments: installmentsCount,
