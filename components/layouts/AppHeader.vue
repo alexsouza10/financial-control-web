@@ -17,8 +17,8 @@
       @keydown.enter="goHome"
       @keydown.space.prevent="goHome"
     >
-      <v-icon class="me-2" size="28">mdi-cash-multiple</v-icon>
-      <span class="font-weight-bold text-truncate"> Gestão de Gastos </span>
+      <!-- <v-icon class="me-2" size="28">mdi-finance</v-icon> -->
+      <!-- <span class="font-weight-bold text-truncate">Gestão de Gastos</span> -->
     </v-toolbar-title>
 
     <v-spacer />
@@ -35,6 +35,17 @@
       >
         <v-icon left>{{ item.icon }}</v-icon>
         <span>{{ item.title }}</span>
+      </v-btn>
+
+      <v-btn
+        v-if="authStore.isAdmin"
+        :to="{ name: 'admin-users' }"
+        variant="text"
+        :class="{ 'v-btn--active': $route.path.startsWith('/admin') }"
+        min-width="auto"
+      >
+        <v-icon left>mdi-shield-account</v-icon>
+        <span>Admin</span>
       </v-btn>
     </template>
 
@@ -62,7 +73,7 @@
       </template>
 
       <!-- Conteúdo do menu de notificações -->
-      <v-card elevation="4" max-height="80vh" style="overflow-y:auto">
+      <v-card elevation="4" max-height="80vh" style="overflow-y: auto">
         <v-card-title class="d-flex justify-space-between align-center">
           <span class="text-h6">Notificações</span>
           <v-btn
@@ -96,6 +107,16 @@
                   <v-icon size="18">mdi-check</v-icon>
                 </v-btn>
               </v-list-item-action>
+            </v-list-item>
+            <v-list-item
+              v-if="authStore.isAdmin"
+              :to="{ name: 'admin-users' }"
+              @click="closeMobileMenu"
+            >
+              <v-list-item-icon
+                ><v-icon>mdi-shield-account</v-icon></v-list-item-icon
+              >
+              <v-list-item-title>Admin</v-list-item-title>
             </v-list-item>
           </v-list>
           <v-alert v-else type="info" variant="tonal" class="ma-4">
@@ -174,6 +195,16 @@
           >
           <v-list-item-title>{{ item.title }}</v-list-item-title>
         </v-list-item>
+        <v-list-item
+          v-if="authStore.isAdmin"
+          to="/admin/users"
+          @click="closeMobileMenu"
+        >
+          <v-list-item-icon
+            ><v-icon>mdi-shield-account</v-icon></v-list-item-icon
+          >
+          <v-list-item-title>Admin</v-list-item-title>
+        </v-list-item>
       </v-list>
       <div class="pa-4">
         <v-btn
@@ -194,6 +225,7 @@
 import { ref, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useTheme, useDisplay } from "vuetify";
+import { useAuthStore } from "~/stores/useAuthStore";
 
 type RouteName =
   | "index"
@@ -227,6 +259,7 @@ interface Emits {
   (e: "toggle-theme"): void;
 }
 const emit = defineEmits<Emits>();
+const authStore = useAuthStore();
 
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
   // { title: "Início", icon: "mdi-home", route: "index" },
@@ -308,11 +341,12 @@ const toggleMobileMenu = () => (drawer.value = !drawer.value);
 const closeMobileMenu = () => (drawer.value = false);
 const onDrawerTransitionEnd = () => {
   if (drawer.value)
-    document
-      .querySelector(".v-navigation-drawer__content .v-list-item:first-child")
-      ?.focus();
+    (
+      document.querySelector(
+        ".v-navigation-drawer__content .v-list-item:first-child"
+      ) as HTMLElement
+    )?.focus();
 };
-
 const markAsRead = (id: number) => {
   const n = notifications.value.find((n) => n.id === id);
   if (n) n.read = true;
