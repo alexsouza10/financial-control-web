@@ -1,5 +1,6 @@
 <template>
   <div class="mx-auto max-w-3xl pa-2">
+    <!-- Navegador de Mês (Agora chama ações da store) -->
     <v-sheet
       class="d-flex align-center pa-2 mb-4"
       rounded="md"
@@ -17,13 +18,15 @@
       <v-btn icon="mdi-chevron-right" variant="text" @click="nextMonth" />
     </v-sheet>
 
+    <!-- Estado de Carregamento -->
     <div v-if="isLoading">
       <v-skeleton-loader type="card" class="mb-4" />
       <v-skeleton-loader type="table" />
     </div>
 
+    <!-- Estado Vazio (Usa o getter da store) -->
     <v-card
-      v-else-if="expensesForCurrentMonth.length === 0"
+      v-else-if="expensesForSelectedMonth.length === 0"
       class="text-center pa-8"
       flat
     >
@@ -34,7 +37,9 @@
       </p>
     </v-card>
 
+    <!-- Conteúdo Principal -->
     <template v-else>
+      <!-- Card de Resumo (Usa getters da store) -->
       <v-card variant="tonal" class="mb-6 pa-3" :color="progressColor">
         <div class="d-flex justify-space-between align-center">
           <div class="text-caption">Total de Despesas no Mês</div>
@@ -44,17 +49,17 @@
         </div>
         <v-progress-linear
           :model-value="monthlyTotal"
-          :max="expensesStore.salary || monthlyTotal"
+          :max="salary || monthlyTotal"
           :color="progressBarColor"
           height="6"
           rounded
           class="my-2"
         />
         <div class="d-flex justify-space-between text-caption mb-2">
-          <span>Orçamento: {{ formatCurrency(expensesStore.salary) }}</span>
+          <span>Orçamento: {{ formatCurrency(salary) }}</span>
           <span
             >Restante:
-            {{ formatCurrency(expensesStore.salary - monthlyTotal) }}</span
+            {{ formatCurrency(salary - monthlyTotal) }}</span
           >
         </div>
 
@@ -71,99 +76,75 @@
         </div>
       </v-card>
 
+      <!-- Tabela de Despesas (Usa getter da store) -->
       <v-card rounded="md" elevation="2">
         <v-data-table
           :headers="headers"
-          :items="expensesForCurrentMonth"
+          :items="expensesForSelectedMonth"
           density="compact"
+          item-value="id"
+          :row-props="getRowProps"
         >
-          <template #item="{ item, columns }">
-            <tr :class="{ 'expense-paid': item.paid }">
-              <td
-                v-for="column in columns"
-                :key="column.key"
-                :class="
-                  column.align === 'end'
-                    ? 'text-end'
-                    : column.align === 'center'
-                    ? 'text-center'
-                    : 'text-start'
-                "
-              >
-                <template v-if="column.key === 'title'">
-                  {{ categoryMap[item.categoryId]?.name || "Sem categoria" }}
-                </template>
+          <!-- Slot para Categoria -->
+          <template #item.category="{ item }">
+            <v-icon
+              size="small"
+              :icon="categoryMap[item.categoryId]?.icon || 'mdi-help-circle'"
+              class="mr-2"
+            />
+            {{ categoryMap[item.categoryId]?.name || "Sem categoria" }}
+          </template>
 
-                <template v-else-if="column.key === 'category'">
-                  <v-icon
-                    size="small"
-                    :icon="
-                      categoryMap[item.categoryId]?.icon || 'mdi-help-circle'
-                    "
-                    class="mr-2"
-                  />
-                  {{ categoryMap[item.categoryId]?.name || "Sem categoria" }}
-                </template>
+          <!-- Slot para Descrição -->
+          <template #item.description="{ value }">
+            <span :class="{ 'text-medium-emphasis fst-italic': !value }">
+              {{ value || "-" }}
+            </span>
+          </template>
 
-                <template v-else-if="column.key === 'description'">
-                  <span
-                    :class="{
-                      'text-medium-emphasis fst-italic': !item.description,
-                    }"
-                  >
-                    {{ item.description || "-" }}
-                  </span>
-                </template>
+          <!-- Slot para Data -->
+          <template #item.date="{ value }">
+            <span class="text-caption">
+              {{ formatDate(value) }}
+            </span>
+          </template>
 
-                <template v-else-if="column.key === 'paid'">
-                  <v-checkbox-btn
-                    :model-value="item.paid"
-                    @click="togglePaid(item)"
-                    density="compact"
-                    color="success"
-                  />
-                </template>
+          <!-- Slot para Status "Pago" -->
+          <template #item.paid="{ item }">
+            <v-checkbox-btn
+              :model-value="item.paid"
+              @click="togglePaid(item)"
+              density="compact"
+              color="success"
+            />
+          </template>
 
-                <template v-else-if="column.key === 'date'">
-                  <span class="text-caption">
-                    {{
-                      format(parseISO(item.date), "dd/MM/yyyy", {
-                        locale: ptBR,
-                      })
-                    }}
-                  </span>
-                </template>
+          <!-- Slot para Valor -->
+          <template #item.value="{ item }">
+            <span
+              class="font-weight-bold"
+              :class="item.paid ? 'text-success' : 'text-error'"
+            >
+              {{ formatCurrency(item.value) }}
+            </span>
+          </template>
 
-                <template v-else-if="column.key === 'value'">
-                  <span
-                    class="font-weight-bold"
-                    :class="item.paid ? 'text-success' : 'text-error'"
-                  >
-                    {{ formatCurrency(item.value) }}
-                  </span>
-                </template>
-
-                <template v-else-if="column.key === 'actions'">
-                  <div class="text-no-wrap">
-                    <v-btn
-                      icon="mdi-pencil"
-                      variant="text"
-                      size="x-small"
-                      @click="openEditDialog(item)"
-                    />
-                    <v-btn
-                      icon="mdi-delete"
-                      variant="text"
-                      size="x-small"
-                      @click="openDeleteDialog(item.id)"
-                    />
-                  </div>
-                </template>
-                <template v-else-if="item[column.key]">{{
-                  item[column.key]
-                }}</template>
-              </td>
-            </tr>
+          <!-- Slot para Ações -->
+          <template #item.actions="{ item }">
+            <div class="text-no-wrap">
+              <v-btn
+                icon="mdi-pencil"
+                variant="text"
+                size="x-small"
+                @click="openEditDialog(item)"
+              />
+              <v-btn
+                icon="mdi-delete"
+                variant="text"
+                size="x-small"
+                @click="openDeleteDialog(item.id)"
+              />
+            </div>
           </template>
         </v-data-table>
       </v-card>
@@ -203,13 +184,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { storeToRefs } from "pinia";
 import {
   parseISO,
   format,
-  getDaysInMonth,
-  startOfMonth,
-  addMonths,
-  subMonths,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Expense, UpdateExpensePayload, Category } from "~/types";
@@ -220,58 +198,30 @@ import EditNumberDialog from "~/components/dialogs/EditNumberDialog.vue";
 const expensesStore = useExpensesStore();
 const categoriesStore = useCategoriesStore();
 
+// --- State Local ---
 const isLoading = ref(true);
 const editDialog = ref(false);
 const editingExpense = ref<Expense | null>(null);
 const deleteDialog = ref(false);
 const expenseIdToDelete = ref<string | null>(null);
-const currentDate = ref(startOfMonth(new Date()));
 
+const { nextMonth, previousMonth } = expensesStore;
+const {
+  currentDate,
+  salary,
+  expensesForSelectedMonth, 
+  totalsForSelectedMonth,    
+} = storeToRefs(expensesStore);
+
+// --- Interface ---
 interface CategoryDetail {
   name: string;
   icon: string;
   color: string;
 }
 
-const categoryMap = computed(() => {
-  const map: Record<string, CategoryDetail> = {};
-  categoriesStore.categories.forEach((cat: Category) => {
-    if (cat.id) {
-      map[cat.id] = {
-        name: cat.name,
-        icon: cat.icon || "mdi-shape-outline",
-        color: cat.color || "primary",
-      };
-    }
-  });
-  return map;
-});
-
-function capitalizeFirstLetter(string: string) {
-  return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
-const currentMonthLabel = computed(() => {
-  const formattedDate = format(currentDate.value, "MMMM 'de' yyyy", {
-    locale: ptBR,
-  });
-  return capitalizeFirstLetter(formattedDate);
-});
-const currentMonthKey = computed(() => format(currentDate.value, "yyyy-MM"));
-
-function nextMonth() {
-  currentDate.value = addMonths(currentDate.value, 1);
-}
-function previousMonth() {
-  currentDate.value = subMonths(currentDate.value, 1);
-}
-
-const progressBarColor = computed(() => {
-  return progressColor.value === "primary" ? "success" : progressColor.value;
-});
-
 const headers = [
-  { title: "Categoria", key: "title", sortable: false, align: "start" },
+  { title: "Categoria", key: "category", sortable: false, align: "start" },
   { title: "Descrição", key: "description", sortable: false, align: "start" },
   { title: "Data", key: "date", align: "start" },
   { title: "Pago", key: "paid", sortable: false, align: "center" },
@@ -279,37 +229,40 @@ const headers = [
   { title: "Ações", key: "actions", sortable: false, align: "center" },
 ];
 
-const expensesForCurrentMonth = computed(() => {
-  if (isLoading.value) return [];
-  return expensesStore.expenses
-    .filter(
-      (exp: Expense) => exp.date && exp.date.startsWith(currentMonthKey.value)
-    )
-    .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+const categoryMap = computed(() => {
+  return categoriesStore.categories.reduce((map, cat) => {
+    if (cat.id) {
+      map[cat.id] = {
+        name: cat.name,
+        icon: cat.icon || "mdi-shape-outline",
+        color: cat.color || "primary",
+      };
+    }
+    return map;
+  }, {} as Record<string, CategoryDetail>);
 });
 
-const monthlyTotal = computed(() =>
-  expensesForCurrentMonth.value.reduce((total, exp) => total + exp.value, 0)
-);
+const currentMonthLabel = computed(() => {
+  const formattedDate = format(currentDate.value, "MMMM 'de' yyyy", {
+    locale: ptBR,
+  });
+  return capitalizeFirstLetter(formattedDate);
+});
 
-const totalPaid = computed(() =>
-  expensesForCurrentMonth.value
-    .filter((exp: Expense) => exp.paid)
-    .reduce((total, exp) => total + exp.value, 0)
-);
-
-const totalUnpaid = computed(() =>
-  expensesForCurrentMonth.value
-    .filter((exp: Expense) => !exp.paid)
-    .reduce((total, exp) => total + exp.value, 0)
-);
+const monthlyTotal = computed(() => totalsForSelectedMonth.value.total);
+const totalPaid = computed(() => totalsForSelectedMonth.value.paid);
+const totalUnpaid = computed(() => totalsForSelectedMonth.value.unpaid);
 
 const progressColor = computed(() => {
-  if (!expensesStore.salary) return "primary";
-  const percentage = (monthlyTotal.value / expensesStore.salary) * 100;
+  if (!salary.value) return "primary";
+  const percentage = (monthlyTotal.value / salary.value) * 100;
   if (percentage > 90) return "error";
   if (percentage > 70) return "warning";
   return "primary";
+});
+
+const progressBarColor = computed(() => {
+  return progressColor.value === "primary" ? "success" : progressColor.value;
 });
 
 function openEditDialog(expense: Expense) {
@@ -349,6 +302,31 @@ async function confirmDelete() {
   cancelDelete();
 }
 
+async function togglePaid(expense: Expense) {
+  if (!expense.id) {
+    console.error("ID da despesa ausente para atualização.");
+    return;
+  }
+
+  const newPaidStatus = !expense.paid;
+
+  try {
+    const payload: UpdateExpensePayload = {
+      categoryId: expense.categoryId,
+      value: expense.value,
+      description: expense.description,
+      paymentMethod: expense.paymentMethod,
+      installments: expense.installments,
+      card: expense.card,
+      date: expense.date,
+      paid: newPaidStatus,
+    };
+    await expensesStore.updateExpense(expense.id, payload);
+  } catch (err) {
+    console.error("Erro ao atualizar status de pagamento:", err);
+  }
+}
+
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -356,36 +334,24 @@ function formatCurrency(value: number) {
   }).format(value || 0);
 }
 
-async function togglePaid(expense: Expense) {
-  const index = expensesStore.expenses.findIndex((e) => e.id === expense.id);
+function formatDate(dateString: string) {
+  if (!dateString) return "-";
   try {
-    if (!expense.id) {
-      console.error("ID da despesa ausente para atualização.");
-      return;
-    }
-    const newPaidStatus = !expense.paid;
-
-    if (index !== -1) {
-      expensesStore.expenses[index] = { ...expense, paid: newPaidStatus };
-    }
-    const payload: UpdateExpensePayload = {
-      categoryId: expense.categoryId,
-      value: expense.value,
-      description: expense.description, // <-- Adicionado
-      paymentMethod: expense.paymentMethod,
-      installments: expense.installments,
-      card: expense.card,
-      date: expense.date,
-      paid: newPaidStatus, // <-- Corrigido
-    };
-
-    await expensesStore.updateExpense(expense.id, payload);
-  } catch (err) {
-    console.error("Erro ao atualizar status de pagamento:", err);
-    if (index !== -1) {
-      expensesStore.expenses[index] = { ...expense, paid: !newPaidStatus };
-    }
+    return format(parseISO(dateString), "dd/MM/yyyy", { locale: ptBR });
+  } catch (e) {
+    console.error("Data inválida:", dateString);
+    return "-";
   }
+}
+
+function capitalizeFirstLetter(string: string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function getRowProps({ item }: { item: Expense }) {
+  return {
+    class: item.paid ? "expense-paid" : "",
+  };
 }
 
 onMounted(async () => {
@@ -405,18 +371,18 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.expense-paid {
+:deep(.expense-paid) {
   opacity: 0.6;
   text-decoration: line-through;
   transition: opacity 0.3s ease-in-out;
 }
 
-.expense-paid .v-checkbox-btn {
+:deep(.expense-paid .v-checkbox-btn) {
   text-decoration: none !important;
   opacity: 1 !important;
 }
 
-.expense-paid td {
+:deep(.expense-paid td) {
   text-decoration: inherit !important;
 }
 </style>

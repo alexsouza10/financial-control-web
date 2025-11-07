@@ -19,7 +19,9 @@ import {
   BarElement,
 } from "chart.js";
 import { computed, defineProps } from "vue";
+import { useTheme } from "vuetify";
 import { useCategoriesStore } from "~/stores/useCategoriesStore";
+import { useExpensesStore } from "~/stores/useExpensesStore";
 
 ChartJS.register(
   Title,
@@ -33,7 +35,6 @@ ChartJS.register(
 interface CategoryData {
   category: string;
   amount: number;
-  categoryId: string;
 }
 
 const props = defineProps<{
@@ -42,71 +43,69 @@ const props = defineProps<{
 }>();
 
 const categoriesStore = useCategoriesStore();
+const expensesStore = useExpensesStore();
+const theme = useTheme();
 
-const backgroundColors = [
-  "#f44336",
-  "#2196f3",
-  "#4caf50",
-  "#ff9800",
-  "#9c27b0",
-  "#00bcd4",
-  "#ffc107",
-  "#e91e63",
-  "#673ab7",
-  "#795548",
-  "#8bc34a",
-  "#ffeb3b",
-  "#03a9f4",
-  "#e57373",
-  "#ba68c8",
-  "#4dd0e1",
-  "#ffb74d",
-  "#f06292",
-  "#9575cd",
-  "#a1887f",
-  "#aed581",
-  "#fff176",
-  "#81d4fa",
-  "#f8bbd0",
-  "#d1c4e9",
-];
+const idealDistribution: Record<string, number> = {
+  Essenciais: 55,
+  Sonhos: 15,
+  Educação: 10,
+  Lazer: 10,
+  "Reserva de Emergência": 10,
+};
+
+function getColor(percentUsed: number) {
+  if (percentUsed < 80) return theme.current.value.colors.primary;
+  if (percentUsed < 100) return "#ff9800";
+  return "#f44336";
+}
 
 const chartData = computed(() => {
-  const allCategoriesMap = new Map<string, number>();
-  categoriesStore.categories.forEach((cat) => {
-    allCategoriesMap.set(cat.name, 0);
-  });
-
-  props.data.forEach((d) => {
-    if (allCategoriesMap.has(d.category)) {
-      allCategoriesMap.set(d.category, d.amount);
-    }
-  });
-
-  const labels = Array.from(allCategoriesMap.keys());
-  const dataValues = Array.from(allCategoriesMap.values());
-  const hasOnlyZeros = dataValues.every((v) => v === 0);
-
-  if (hasOnlyZeros) {
+  const salary = expensesStore.salary || 0;
+  if (salary <= 0) {
     return {
-      labels: ["Sem despesas"],
+      labels: ["Sem salário cadastrado"],
       datasets: [
         {
           label: "Despesas por Categoria",
           data: [1],
-          backgroundColor: ["#e0e0e0"],
+          backgroundColor: ["#ccc"],
         },
       ],
     };
   }
 
+  const labels: string[] = [];
+  const dataValues: number[] = [];
+  const colors: string[] = [];
+
+  props.data.forEach((d) => {
+    const normalize = (text: string) =>
+      text
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+
+    const key = normalize(d.category);
+    const idealPercent =
+      Object.entries(idealDistribution).find(
+        ([name]) => normalize(name) === key
+      )?.[1] ?? 0;
+    const idealAmount = (salary * idealPercent) / 100;
+    const percentUsed = idealAmount > 0 ? (d.amount / idealAmount) * 100 : 0;
+
+    labels.push(d.category);
+    dataValues.push(d.amount);
+    colors.push(getColor(percentUsed));
+  });
+
   return {
-    labels: labels,
+    labels,
     datasets: [
       {
-        label: props.title || "Despesas por Categoria",
+        label: "Uso das Categorias em relação ao Salário",
         data: dataValues,
-        backgroundColor: backgroundColors,
+        backgroundColor: colors,
       },
     ],
   };
@@ -116,15 +115,7 @@ const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
-    legend: {
-      display: false,
-      position: "right" as const,
-      align: "start" as const,
-      labels: {
-        boxWidth: 12,
-        padding: 12,
-      },
-    },
+    legend: { display: false },
     tooltip: {
       callbacks: {
         label: function (context: any) {
@@ -134,10 +125,38 @@ const chartOptions = {
             (a: number, b: number) => a + b,
             0
           );
-          const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+
+          const salary = 10000;
+          const idealDistribution: Record<string, number> = {
+            Essenciais: 55,
+            Sonhos: 15,
+            Educação: 10,
+            Lazer: 10,
+            "Reserva de Emergência": 10,
+          };
+
+          const normalize = (text: string) =>
+            text
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .toLowerCase();
+
+          const key = normalize(label);
+          const idealPercent =
+            Object.entries(idealDistribution).find(
+              ([name]) => normalize(name) === key
+            )?.[1] ?? 0;
+
+          const idealAmount = (salary * idealPercent) / 100;
+          const percentUsed =
+            idealAmount > 0 ? ((value / idealAmount) * 100).toFixed(1) : "0.0";
+
+          const status =
+            parseFloat(percentUsed) < 100 ? "Dentro da meta" : "Acima da meta";
+
           return `${label}: R$ ${value
             .toFixed(2)
-            .replace(".", ",")} (${percentage}%)`;
+            .replace(".", ",")} — ${percentUsed}% da meta (${status})`;
         },
       },
     },
@@ -145,6 +164,10 @@ const chartOptions = {
   scales: {
     y: {
       beginAtZero: true,
+      ticks: {
+        callback: (value: number) =>
+          "R$ " + value.toLocaleString("pt-BR", { minimumFractionDigits: 0 }),
+      },
     },
   },
 };

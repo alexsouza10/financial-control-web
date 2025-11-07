@@ -1,6 +1,13 @@
 import { defineStore } from "pinia";
 import { useNuxtApp } from "#app";
 import {
+  format,
+  startOfMonth,
+  addMonths,
+  subMonths,
+  getDaysInMonth,
+} from "date-fns";
+import {
   Expense,
   Salary,
   CreateExpensePayload,
@@ -12,6 +19,7 @@ interface ExpensesState {
   salary: number;
   loading: boolean;
   error: string | null;
+  currentDate: Date;
 }
 
 export const useExpensesStore = defineStore("expenses", {
@@ -20,70 +28,76 @@ export const useExpensesStore = defineStore("expenses", {
     salary: 0,
     loading: false,
     error: null,
+    currentDate: startOfMonth(new Date()),
   }),
 
   getters: {
+    currentMonthKey(state): string {
+      return format(state.currentDate, "yyyy-MM");
+    },
+
+    expensesForSelectedMonth(state): Expense[] {
+      const key = (this as any).currentMonthKey; 
+      if (!state.expenses) return [];
+
+      return state.expenses.filter(
+        (exp) => exp.date && exp.date.startsWith(key)
+      );
+    },
+
+    totalsForSelectedMonth(
+      state
+    ): { total: number; paid: number; unpaid: number } {
+      const expenses = (this as any).expensesForSelectedMonth;
+      return expenses.reduce(
+        (acc: any, exp: Expense) => {
+          acc.total += exp.value;
+          if (exp.paid) {
+            acc.paid += exp.value;
+          } else {
+            acc.unpaid += exp.value;
+          }
+          return acc;
+        },
+        { total: 0, paid: 0, unpaid: 0 }
+      );
+    },
+
     totalExpenses: (state: ExpensesState): number =>
       state.expenses.reduce(
         (sum: number, expense: Expense) => sum + expense.value,
         0
       ),
 
-    currentMonthExpenses: (state: ExpensesState): number => {
-      const now = new Date();
-      const currentMonth = now.getMonth() + 1;
-      const currentYear = now.getFullYear();
-
-      const total = state.expenses.reduce((sum: number, expense: Expense) => {
-        try {
-          const expenseDate = new Date(expense.date);
-          const expenseMonth = expenseDate.getMonth() + 1;
-          const expenseYear = expenseDate.getFullYear();
-
-          if (expenseMonth === currentMonth && expenseYear === currentYear) {
-            return sum + expense.value;
-          }
-        } catch (error) {
-          console.error("❌ Error processing expense:", {
-            id: expense.id,
-            date: expense.date,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-        return sum;
-      }, 0);
-
-      return total;
+    currentMonthExpenses(state): number {
+      return (this as any).totalsForSelectedMonth.total; 
     },
 
-    averageExpense(): number {
-      const now = new Date();
-      const currentDay = now.getDate();
-      const currentMonth = now.getMonth() + 1;
-      const currentYear = now.getFullYear();
-      const currentMonthExpenses = this.expenses.filter((expense) => {
-        try {
-          const expenseDate = new Date(expense.date);
-          return (
-            expenseDate.getMonth() + 1 === currentMonth &&
-            expenseDate.getFullYear() === currentYear
-          );
-        } catch {
-          return false;
-        }
-      });
+    averageExpense(state): number {
+      const monthlyTotal = (this as any).totalsForSelectedMonth.total;
+      if (monthlyTotal === 0) return 0;
 
-      if (currentMonthExpenses.length === 0) return 0;
-      const monthlyTotal = currentMonthExpenses.reduce(
-        (sum, exp) => sum + exp.value,
-        0
-      );
-      const daysElapsed = Math.max(1, currentDay);
-      return monthlyTotal / daysElapsed;
+      const today = new Date();
+      const isCurrentMonth =
+        state.currentDate.getMonth() === today.getMonth() &&
+        state.currentDate.getFullYear() === today.getFullYear();
+
+      const daysInMonth = getDaysInMonth(state.currentDate);
+
+      const daysToDivideBy = isCurrentMonth ? today.getDate() : daysInMonth;
+
+      return monthlyTotal / Math.max(1, daysToDivideBy);
     },
   },
 
   actions: {
+    nextMonth() {
+      this.currentDate = addMonths(this.currentDate, 1);
+    },
+    previousMonth() {
+      this.currentDate = subMonths(this.currentDate, 1);
+    },
+
     async fetchExpenses() {
       const { $api } = useNuxtApp();
       this.loading = true;
