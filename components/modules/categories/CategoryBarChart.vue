@@ -1,10 +1,6 @@
 <template>
-  <v-card elevation="3">
-    <v-card-title class="justify-center">{{ title }}</v-card-title>
-    <v-card-text class="d-flex" style="height: 360px">
-      <Bar :data="chartData" :options="chartOptions" />
-    </v-card-text>
-  </v-card>
+  <!-- O template não precisa mudar, apenas renderiza o que o script mandar -->
+  <Bar :data="chartData" :options="chartOptions" />
 </template>
 
 <script setup lang="ts">
@@ -20,8 +16,6 @@ import {
 } from "chart.js";
 import { computed, defineProps } from "vue";
 import { useTheme } from "vuetify";
-import { useCategoriesStore } from "~/stores/useCategoriesStore";
-import { useExpensesStore } from "~/stores/useExpensesStore";
 
 ChartJS.register(
   Title,
@@ -37,73 +31,79 @@ interface CategoryData {
   amount: number;
 }
 
+// Props atualizadas
 const props = defineProps<{
   data: CategoryData[];
-  title?: string;
+  salary: number; 
+  // MODIFICADO: idealDistribution agora é opcional
+  idealDistribution?: Record<string, number>;
 }>();
 
-const categoriesStore = useCategoriesStore();
-const expensesStore = useExpensesStore();
 const theme = useTheme();
+const defaultBarColor = computed(() => theme.current.value.colors.primary);
 
-const idealDistribution: Record<string, number> = {
-  Essenciais: 55,
-  Sonhos: 15,
-  Educação: 10,
-  Lazer: 10,
-  "Reserva de Emergência": 10,
-};
-
-function getColor(percentUsed: number) {
-  if (percentUsed < 80) return theme.current.value.colors.primary;
-  if (percentUsed < 100) return "#ff9800";
-  return "#f44336";
+// Lógica de cor (só será usada se as regras estiverem ativadas)
+function getRuleColor(percentUsed: number) {
+  if (percentUsed < 80) return defaultBarColor.value;
+  if (percentUsed < 100) return "#ff9800"; // Laranja
+  return "#f44336"; // Vermelho
 }
 
+// NOVO: Paleta de cores para quando as regras estão desativadas
+const CHART_COLORS = [
+  '#42A5F5', // Blue 500
+  '#66BB6A', // Green 500
+  '#FFA726', // Orange 500
+  '#EF5350', // Red 500
+  '#AB47BC', // Purple 500
+  '#26A69A', // Teal 500
+  '#FF7043', // Deep Orange 500
+  '#8D6E63', // Brown 500
+  '#78909C', // Blue Grey 500
+];
+
+// MODIFICADO: chartData agora verifica se as regras estão ativas
 const chartData = computed(() => {
-  const salary = expensesStore.salary || 0;
-  if (salary <= 0) {
-    return {
-      labels: ["Sem salário cadastrado"],
-      datasets: [
-        {
-          label: "Despesas por Categoria",
-          data: [1],
-          backgroundColor: ["#ccc"],
-        },
-      ],
-    };
-  }
+  // Verifica se as regras estão ativadas
+  const rulesEnabled = !!props.idealDistribution && props.salary > 0;
 
   const labels: string[] = [];
   const dataValues: number[] = [];
   const colors: string[] = [];
 
-  props.data.forEach((d) => {
-    const normalize = (text: string) =>
-      text
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase();
-
-    const key = normalize(d.category);
-    const idealPercent =
-      Object.entries(idealDistribution).find(
-        ([name]) => normalize(name) === key
-      )?.[1] ?? 0;
-    const idealAmount = (salary * idealPercent) / 100;
-    const percentUsed = idealAmount > 0 ? (d.amount / idealAmount) * 100 : 0;
-
+  props.data.forEach((d, index) => { // Adicionado 'index'
     labels.push(d.category);
     dataValues.push(d.amount);
-    colors.push(getColor(percentUsed));
+
+    if (rulesEnabled) {
+      // Se regras ativadas, calcula a cor
+      const normalize = (text: string) =>
+        text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+      // O nome da categoria (d.category) já vem em MAIÚSCULO do 'barChartData'
+      const key = normalize(d.category); 
+      
+      const idealPercent =
+        Object.entries(props.idealDistribution!).find( // ! é seguro por causa da flag rulesEnabled
+          // Compara chaves normalizadas (ex: 'ESSENCIAIS' com 'essenciais')
+          ([name]) => normalize(name) === key
+        )?.[1] ?? 0;
+
+      const idealAmount = (props.salary * idealPercent) / 100;
+      const percentUsed = idealAmount > 0 ? (d.amount / idealAmount) * 100 : 0;
+      
+      colors.push(getRuleColor(percentUsed));
+    } else {
+      // MODIFICADO: Se regras desativadas, usa a paleta de cores
+      colors.push(CHART_COLORS[index % CHART_COLORS.length]);
+    }
   });
 
   return {
     labels,
     datasets: [
       {
-        label: "Uso das Categorias em relação ao Salário",
+        label: "Gastos por Categoria", // Label simplificado
         data: dataValues,
         backgroundColor: colors,
       },
@@ -111,66 +111,59 @@ const chartData = computed(() => {
   };
 });
 
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      callbacks: {
-        label: function (context: any) {
-          const label = context.label || "";
-          const value = context.parsed.y;
-          const total = context.dataset.data.reduce(
-            (a: number, b: number) => a + b,
-            0
-          );
+// MODIFICADO: chartOptions agora verifica se as regras estão ativas
+const chartOptions = computed(() => {
+  const rulesEnabled = !!props.idealDistribution && props.salary > 0;
 
-          const salary = 10000;
-          const idealDistribution: Record<string, number> = {
-            Essenciais: 55,
-            Sonhos: 15,
-            Educação: 10,
-            Lazer: 10,
-            "Reserva de Emergência": 10,
-          };
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: function (context: any) {
+            const label = context.label || ""; // Ex: "ESSENCIAIS"
+            const value = context.parsed.y;
+            const formattedValue = `R$ ${value.toFixed(2).replace(".", ",")}`;
 
-          const normalize = (text: string) =>
-            text
-              .normalize("NFD")
-              .replace(/[\u0300-\u036f]/g, "")
-              .toLowerCase();
+            if (!rulesEnabled) {
+              // Regras DESATIVADAS: Mostra tooltip simples
+              return `${label}: ${formattedValue}`;
+            }
 
-          const key = normalize(label);
-          const idealPercent =
-            Object.entries(idealDistribution).find(
-              ([name]) => normalize(name) === key
-            )?.[1] ?? 0;
+            // Regras ATIVADAS: Mostra tooltip detalhado
+            const normalize = (text: string) =>
+              text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-          const idealAmount = (salary * idealPercent) / 100;
-          const percentUsed =
-            idealAmount > 0 ? ((value / idealAmount) * 100).toFixed(1) : "0.0";
+            const key = normalize(label); // ex: "essenciais"
+            
+            const idealPercent =
+              Object.entries(props.idealDistribution!).find( // ! é seguro
+                ([name]) => normalize(name) === key
+              )?.[1] ?? 0;
 
-          const status =
-            parseFloat(percentUsed) < 100 ? "Dentro da meta" : "Acima da meta";
+            const idealAmount = (props.salary * idealPercent) / 100;
+            const percentUsed =
+              idealAmount > 0 ? ((value / idealAmount) * 100).toFixed(1) : "0.0";
 
-          return `${label}: R$ ${value
-            .toFixed(2)
-            .replace(".", ",")} — ${percentUsed}% da meta (${status})`;
+            const status =
+              parseFloat(percentUsed) < 100 ? "Dentro da meta" : "Acima da meta";
+
+            return `${label}: ${formattedValue} — ${percentUsed}% da meta (${status})`;
+          },
         },
       },
     },
-  },
-  scales: {
-    y: {
-      beginAtZero: true,
-      ticks: {
-        callback: (value: number) =>
-          "R$ " + value.toLocaleString("pt-BR", { minimumFractionDigits: 0 }),
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: (value: number) =>
+            "R$ " + value.toLocaleString("pt-BR", { minimumFractionDigits: 0 }),
+        },
       },
     },
-  },
-};
+  };
+});
 </script>
-
-<style scoped></style>

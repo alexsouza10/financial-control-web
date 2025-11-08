@@ -12,11 +12,11 @@ import {
   Salary,
   CreateExpensePayload,
   UpdateExpensePayload,
-} from "~/types/expense";
+} from "~/types/expense"; // Certifique-se que seus tipos estão corretos
 
 interface ExpensesState {
   expenses: Expense[];
-  salary: number;
+  salary: number; // Armazena apenas o salário atual
   loading: boolean;
   error: string | null;
   currentDate: Date;
@@ -32,19 +32,17 @@ export const useExpensesStore = defineStore("expenses", {
   }),
 
   getters: {
+    // --- (Seus getters existentes) ---
     currentMonthKey(state): string {
       return format(state.currentDate, "yyyy-MM");
     },
-
     expensesForSelectedMonth(state): Expense[] {
-      const key = (this as any).currentMonthKey; 
+      const key = (this as any).currentMonthKey;
       if (!state.expenses) return [];
-
       return state.expenses.filter(
         (exp) => exp.date && exp.date.startsWith(key)
       );
     },
-
     totalsForSelectedMonth(
       state
     ): { total: number; paid: number; unpaid: number } {
@@ -62,35 +60,29 @@ export const useExpensesStore = defineStore("expenses", {
         { total: 0, paid: 0, unpaid: 0 }
       );
     },
-
     totalExpenses: (state: ExpensesState): number =>
       state.expenses.reduce(
         (sum: number, expense: Expense) => sum + expense.value,
         0
       ),
-
     currentMonthExpenses(state): number {
-      return (this as any).totalsForSelectedMonth.total; 
+      return (this as any).totalsForSelectedMonth.total;
     },
-
     averageExpense(state): number {
       const monthlyTotal = (this as any).totalsForSelectedMonth.total;
       if (monthlyTotal === 0) return 0;
-
       const today = new Date();
       const isCurrentMonth =
         state.currentDate.getMonth() === today.getMonth() &&
         state.currentDate.getFullYear() === today.getFullYear();
-
       const daysInMonth = getDaysInMonth(state.currentDate);
-
       const daysToDivideBy = isCurrentMonth ? today.getDate() : daysInMonth;
-
       return monthlyTotal / Math.max(1, daysToDivideBy);
     },
   },
 
   actions: {
+    // --- (Ações de data não mudam) ---
     nextMonth() {
       this.currentDate = addMonths(this.currentDate, 1);
     },
@@ -98,7 +90,13 @@ export const useExpensesStore = defineStore("expenses", {
       this.currentDate = subMonths(this.currentDate, 1);
     },
 
+    // **** AÇÃO COM "GUARDA" ****
     async fetchExpenses() {
+      // "Guarda": Se já tem despesas ou está carregando, para.
+      if (this.expenses.length > 0 || this.loading) {
+        return;
+      }
+
       const { $api } = useNuxtApp();
       this.loading = true;
       this.error = null;
@@ -114,6 +112,63 @@ export const useExpensesStore = defineStore("expenses", {
       }
     },
 
+    // **** AÇÃO COM "GUARDA" ****
+    async fetchSalary() {
+      // "Guarda": Se já tem salário ou está carregando, para.
+      if (this.salary > 0 || this.loading) {
+        return;
+      }
+
+      const { $api } = useNuxtApp();
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await $api.get<Salary[]>("/Salaries");
+        // A lógica de pegar o mais recente continua a mesma
+        if (response.data && response.data.length > 0) {
+          const latestSalary = response.data.sort((a, b) => {
+            const dateA = new Date(a.date);
+            const dateB = new Date(b.date);
+            return dateB.getTime() - dateA.getTime();
+          })[0];
+          this.salary = latestSalary.value;
+        } else {
+          this.salary = 0;
+        }
+      } catch (err: any) {
+        this.error =
+          "Failed to fetch salary: " + (err.response?.data || err.message);
+        console.error(this.error, err);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // **** AÇÃO ATUALIZADA ****
+    async setSalary(newValue: number) {
+      const { $api } = useNuxtApp();
+      this.loading = true;
+      this.error = null;
+      try {
+        const salaryPayload = {
+          value: newValue,
+          date: new Date().toISOString(), // O backend vai tratar o Mês/Ano
+        };
+        // O backend agora faz "Upsert"
+        const response = await $api.post<Salary>("/Salaries", salaryPayload);
+        // Atualiza o estado local com o valor salvo
+        this.salary = response.data.value;
+      } catch (err: any) {
+        this.error =
+          "Failed to update salary: " + (err.response?.data || err.message);
+        console.error(this.error, err);
+        throw err;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // --- (addExpense, updateExpense, deleteExpense não mudam) ---
     async addExpense(expensePayload: CreateExpensePayload) {
       const { $api } = useNuxtApp();
       this.loading = true;
@@ -165,55 +220,6 @@ export const useExpensesStore = defineStore("expenses", {
       } catch (err: any) {
         this.error =
           "Failed to delete expense: " + (err.response?.data || err.message);
-        console.error(this.error, err);
-        throw err;
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async fetchSalary() {
-      const { $api } = useNuxtApp();
-      this.loading = true;
-      this.error = null;
-      try {
-        const response = await $api.get<Salary[]>("/Salaries");
-
-        if (response.data && response.data.length > 0) {
-          const latestSalary = response.data.sort((a, b) => {
-            const dateA = new Date(a.date);
-            const dateB = new Date(b.date);
-            return dateB.getTime() - dateA.getTime();
-          })[0];
-
-          this.salary = latestSalary.value;
-        } else {
-          this.salary = 0;
-        }
-      } catch (err: any) {
-        this.error =
-          "Failed to fetch salary: " + (err.response?.data || err.message);
-        console.error(this.error, err);
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async setSalary(newValue: number) {
-      const { $api } = useNuxtApp();
-      this.loading = true;
-      this.error = null;
-      try {
-        const salaryPayload = {
-          value: newValue,
-          date: new Date().toISOString(),
-        };
-        await $api.post<Salary>("/Salaries", salaryPayload);
-
-        await this.fetchSalary();
-      } catch (err: any) {
-        this.error =
-          "Failed to update salary: " + (err.response?.data || err.message);
         console.error(this.error, err);
         throw err;
       } finally {
