@@ -289,11 +289,6 @@ async function save() {
       const installmentsCount = editedExpense.value.installments;
       const initialDate = parseISO(editedExpense.value.date);
 
-      console.log(
-        "Saving expense with categoryId:",
-        editedExpense.value.categoryId
-      );
-
       if (installmentsCount > 1) {
         const expensesToRegister: Expense[] = [];
         const installmentValue = totalValue / installmentsCount;

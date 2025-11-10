@@ -2,7 +2,7 @@
   <v-container class="fill-height" fluid>
     <v-row align="center" justify="center">
       <v-col cols="12" sm="8" md="6" lg="4">
-        <v-card class="elevation-12">
+        <v-card class="elevation-12 mx-auto" max-width="600">
           <v-toolbar color="primary" dark flat>
             <v-toolbar-title>Criar Conta</v-toolbar-title>
           </v-toolbar>
@@ -16,6 +16,7 @@
                 variant="outlined"
                 required
               ></v-text-field>
+
               <v-text-field
                 label="E-mail"
                 v-model="email"
@@ -24,14 +25,32 @@
                 variant="outlined"
                 required
               ></v-text-field>
+
               <v-text-field
                 label="Senha"
                 v-model="password"
                 prepend-inner-icon="mdi-lock"
-                type="password"
+                :type="showPassword ? 'text' : 'password'"
+                :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                @click:append-inner="showPassword = !showPassword"
                 variant="outlined"
                 required
               ></v-text-field>
+
+              <v-text-field
+                label="Confirmar Senha"
+                v-model="passwordConfirm"
+                prepend-inner-icon="mdi-lock-check"
+                :type="showPasswordConfirm ? 'text' : 'password'"
+                :append-inner-icon="
+                  showPasswordConfirm ? 'mdi-eye' : 'mdi-eye-off'
+                "
+                @click:append-inner="showPasswordConfirm = !showPasswordConfirm"
+                variant="outlined"
+                required
+                :error-messages="passwordError"
+              ></v-text-field>
+
               <v-alert v-if="authStore.error" type="error" class="mt-3">
                 {{ authStore.error }}
               </v-alert>
@@ -43,7 +62,9 @@
               color="primary"
               @click="handleRegister"
               :loading="authStore.loading"
-              :disabled="!username || !email || !password"
+              :disabled="
+                !username || !email || !password || password !== passwordConfirm
+              "
             >
               Registrar
             </v-btn>
@@ -55,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useAuthStore } from "~/stores/useAuthStore";
 
 definePageMeta({
@@ -67,7 +88,27 @@ const username = ref("");
 const email = ref("");
 const password = ref("");
 
+const passwordConfirm = ref("");
+const showPassword = ref(false);
+const showPasswordConfirm = ref(false);
+
+const passwordError = computed(() => {
+  if (
+    password.value &&
+    passwordConfirm.value &&
+    password.value !== passwordConfirm.value
+  ) {
+    return "As senhas não coincidem.";
+  }
+  return "";
+});
+
 const handleRegister = async () => {
+  if (password.value !== passwordConfirm.value) {
+    authStore.error = "As senhas não coincidem.";
+    return;
+  }
+
   await authStore.register({
     username: username.value,
     email: email.value,

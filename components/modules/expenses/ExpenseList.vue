@@ -1,6 +1,5 @@
 <template>
   <div class="mx-auto max-w-3xl pa-2">
-    <!-- Navegador de Mês (Agora chama ações da store) -->
     <v-sheet
       class="d-flex align-center pa-2 mb-4"
       rounded="md"
@@ -18,13 +17,11 @@
       <v-btn icon="mdi-chevron-right" variant="text" @click="nextMonth" />
     </v-sheet>
 
-    <!-- Estado de Carregamento -->
     <div v-if="isLoading">
       <v-skeleton-loader type="card" class="mb-4" />
       <v-skeleton-loader type="table" />
     </div>
 
-    <!-- Estado Vazio (Usa o getter da store) -->
     <v-card
       v-else-if="expensesForSelectedMonth.length === 0"
       class="text-center pa-8"
@@ -37,9 +34,7 @@
       </p>
     </v-card>
 
-    <!-- Conteúdo Principal -->
     <template v-else>
-      <!-- Card de Resumo (Usa getters da store) -->
       <v-card variant="tonal" class="mb-6 pa-3" :color="progressColor">
         <div class="d-flex justify-space-between align-center">
           <div class="text-caption">Total de Despesas no Mês</div>
@@ -49,17 +44,16 @@
         </div>
         <v-progress-linear
           :model-value="monthlyTotal"
-          :max="salary || monthlyTotal"
+          :max="currentSalary || monthlyTotal"
           :color="progressBarColor"
           height="6"
           rounded
           class="my-2"
         />
         <div class="d-flex justify-space-between text-caption mb-2">
-          <span>Orçamento: {{ formatCurrency(salary) }}</span>
+          <span>Orçamento: {{ formatCurrency(currentSalary) }}</span>
           <span
-            >Restante:
-            {{ formatCurrency(salary - monthlyTotal) }}</span
+            >Restante: {{ formatCurrency(currentSalary - monthlyTotal) }}</span
           >
         </div>
 
@@ -76,7 +70,6 @@
         </div>
       </v-card>
 
-      <!-- Tabela de Despesas (Usa getter da store) -->
       <v-card rounded="md" elevation="2">
         <v-data-table
           :headers="headers"
@@ -85,7 +78,6 @@
           item-value="id"
           :row-props="getRowProps"
         >
-          <!-- Slot para Categoria -->
           <template #item.category="{ item }">
             <v-icon
               size="small"
@@ -95,21 +87,18 @@
             {{ categoryMap[item.categoryId]?.name || "Sem categoria" }}
           </template>
 
-          <!-- Slot para Descrição -->
           <template #item.description="{ value }">
             <span :class="{ 'text-medium-emphasis fst-italic': !value }">
               {{ value || "-" }}
             </span>
           </template>
 
-          <!-- Slot para Data -->
           <template #item.date="{ value }">
             <span class="text-caption">
               {{ formatDate(value) }}
             </span>
           </template>
 
-          <!-- Slot para Status "Pago" -->
           <template #item.paid="{ item }">
             <v-checkbox-btn
               :model-value="item.paid"
@@ -119,7 +108,6 @@
             />
           </template>
 
-          <!-- Slot para Valor -->
           <template #item.value="{ item }">
             <span
               class="font-weight-bold"
@@ -129,7 +117,6 @@
             </span>
           </template>
 
-          <!-- Slot para Ações -->
           <template #item.actions="{ item }">
             <div class="text-no-wrap">
               <v-btn
@@ -150,7 +137,6 @@
       </v-card>
     </template>
 
-    <!-- Dialogs -->
     <EditNumberDialog
       v-model="editDialog"
       :expense="editingExpense"
@@ -185,10 +171,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { storeToRefs } from "pinia";
-import {
-  parseISO,
-  format,
-} from "date-fns";
+import { parseISO, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Expense, UpdateExpensePayload, Category } from "~/types";
 import { useExpensesStore } from "~/stores/useExpensesStore";
@@ -198,7 +181,6 @@ import EditNumberDialog from "~/components/dialogs/EditNumberDialog.vue";
 const expensesStore = useExpensesStore();
 const categoriesStore = useCategoriesStore();
 
-// --- State Local ---
 const isLoading = ref(true);
 const editDialog = ref(false);
 const editingExpense = ref<Expense | null>(null);
@@ -206,14 +188,10 @@ const deleteDialog = ref(false);
 const expenseIdToDelete = ref<string | null>(null);
 
 const { nextMonth, previousMonth } = expensesStore;
-const {
-  currentDate,
-  salary,
-  expensesForSelectedMonth, 
-  totalsForSelectedMonth,    
-} = storeToRefs(expensesStore);
 
-// --- Interface ---
+const { currentDate, expensesForSelectedMonth, totalsForSelectedMonth } =
+  storeToRefs(expensesStore);
+
 interface CategoryDetail {
   name: string;
   icon: string;
@@ -228,6 +206,8 @@ const headers = [
   { title: "Valor", key: "value", align: "end" },
   { title: "Ações", key: "actions", sortable: false, align: "center" },
 ];
+
+const currentSalary = computed(() => expensesStore.salaryForSelectedMonth);
 
 const categoryMap = computed(() => {
   return categoriesStore.categories.reduce((map, cat) => {
@@ -254,8 +234,8 @@ const totalPaid = computed(() => totalsForSelectedMonth.value.paid);
 const totalUnpaid = computed(() => totalsForSelectedMonth.value.unpaid);
 
 const progressColor = computed(() => {
-  if (!salary.value) return "primary";
-  const percentage = (monthlyTotal.value / salary.value) * 100;
+  if (!currentSalary.value) return "primary";
+  const percentage = (monthlyTotal.value / currentSalary.value) * 100;
   if (percentage > 90) return "error";
   if (percentage > 70) return "warning";
   return "primary";
@@ -369,20 +349,3 @@ onMounted(async () => {
   }
 });
 </script>
-
-<style scoped>
-:deep(.expense-paid) {
-  opacity: 0.6;
-  text-decoration: line-through;
-  transition: opacity 0.3s ease-in-out;
-}
-
-:deep(.expense-paid .v-checkbox-btn) {
-  text-decoration: none !important;
-  opacity: 1 !important;
-}
-
-:deep(.expense-paid td) {
-  text-decoration: inherit !important;
-}
-</style>

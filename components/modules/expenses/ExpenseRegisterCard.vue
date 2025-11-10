@@ -723,7 +723,6 @@ const closeCard = () => {
 
 // Menu de contexto para categorias
 const openCategoryMenu = (event: MouseEvent, category: CategoryWithMenu) => {
-  console.log('Opening category menu for:', category);
   event.preventDefault();
   category.showMenu = true;
   category.menuActivator = event.currentTarget;
@@ -731,7 +730,6 @@ const openCategoryMenu = (event: MouseEvent, category: CategoryWithMenu) => {
 
 // Editar categoria
 const editCategory = (category: CategoryWithMenu) => {
-  console.log('Editing category:', category);
   editingCategory.value = {
     id: category.id,
     name: category.name,
@@ -751,7 +749,6 @@ const editCategory = (category: CategoryWithMenu) => {
 
 // Atualizar categoria
 async function updateCategory() {
-  console.log('Updating category:', editingCategory.value);
   const { valid } = await editCategoryForm.value.validate();
   if (!valid) return;
 
@@ -763,7 +760,6 @@ async function updateCategory() {
       icon: editingCategory.value.icon
     };
 
-    console.log('Sending update payload:', categoryPayload);
     await categoriesStore.updateCategory(editingCategory.value.id, categoryPayload);
     
     // Fechar modal e limpar formulário
@@ -803,7 +799,6 @@ async function updateCategory() {
 
 // Excluir categoria
 const deleteCategory = (category: CategoryWithMenu) => {
-  console.log('Deleting category:', category);
   deletingCategory.value = category;
   showDeleteCategoryDialog.value = true;
   category.showMenu = false;
@@ -821,7 +816,6 @@ const deleteCategory = (category: CategoryWithMenu) => {
 async function confirmDeleteCategory() {
   if (!deletingCategory.value) return;
 
-  console.log('Confirming deletion of category:', deletingCategory.value);
   isDeletingCategory.value = true;
 
   try {
@@ -862,7 +856,6 @@ async function confirmDeleteCategory() {
 
 // Criar categoria
 async function createCategory() {
-  console.log('Creating category:', newCategory.value);
   const { valid } = await categoryForm.value.validate();
   if (!valid) return;
 
@@ -874,7 +867,6 @@ async function createCategory() {
       icon: newCategory.value.icon
     };
 
-    console.log('Sending create payload:', categoryPayload);
     await categoriesStore.createCategory(categoryPayload);
     
     // Fechar modal e limpar formulário

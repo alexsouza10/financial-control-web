@@ -2,7 +2,7 @@
   <v-container class="fill-height" fluid>
     <v-row align="center" justify="center">
       <v-col cols="12" sm="8" md="6" lg="4">
-        <v-card class="elevation-12">
+        <v-card class="elevation-12 mx-auto" max-width="600">
           <v-toolbar color="primary" dark flat>
             <v-toolbar-title>Tela de Login</v-toolbar-title>
           </v-toolbar>
@@ -16,20 +16,26 @@
                 variant="outlined"
                 required
               ></v-text-field>
+
               <v-text-field
                 label="Senha"
                 v-model="password"
                 prepend-inner-icon="mdi-lock"
-                type="password"
+                :type="showPassword ? 'text' : 'password'"
+                :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                @click:append-inner="showPassword = !showPassword"
                 variant="outlined"
                 required
               ></v-text-field>
+
               <v-alert v-if="authStore.error" type="error" class="mt-3">
                 {{ authStore.error }}
               </v-alert>
             </v-form>
           </v-card-text>
-          <v-card-actions class="d-flex justify-space-between align-center px-4 pb-4">
+          <v-card-actions
+            class="d-flex justify-space-between align-center px-4 pb-4"
+          >
             <v-btn color="secondary" text to="/register">Criar conta</v-btn>
             <v-btn
               color="primary"
@@ -39,9 +45,6 @@
             >
               Entrar
             </v-btn>
-          </v-card-actions>
-          <v-card-actions class="d-flex justify-center pa-2">
-            <v-btn @click="fillWithMockUser" text>Usar usuário de teste</v-btn>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -57,18 +60,12 @@ definePageMeta({
   layout: "auth",
 });
 
-const MOCK_EMAIL = "teste@teste.com";
-const MOCK_PASSWORD = "12345678";
 const authStore = useAuthStore();
 const email = ref("");
 const password = ref("");
+const showPassword = ref(false);
 
 const handleLogin = async () => {
   await authStore.login({ email: email.value, password: password.value });
-};
-
-const fillWithMockUser = () => {
-  email.value = MOCK_EMAIL;
-  password.value = MOCK_PASSWORD;
 };
 </script>

@@ -1,223 +1,269 @@
 <template>
   <v-container fluid>
-    <v-card elevation="2" class="mb-4">
-      <v-card-title class="text-h8 text-center"
-        >Filtros por Período</v-card-title
-      >
-      <v-divider></v-divider>
-      <v-card-text>
-        <v-row>
-          <v-col cols="12" md="3">
-            <v-select
-              v-model="selectedPeriod"
-              :items="dateRanges"
-              label="Período"
-              variant="outlined"
-              density="comfortable"
-              item-title="text"
-              item-value="value"
-              hide-details
-            />
-          </v-col>
-
-          <v-col cols="12" md="3">
-            <v-menu
-              v-model="startMenu"
-              :close-on-content-click="false"
-              transition="scale-transition"
-              offset-y
+    <v-expansion-panels v-model="filterPanel" multiple class="mb-6">
+      <v-expansion-panel elevation="2">
+        <v-expansion-panel-title>
+          <div class="d-flex align-center justify-space-between w-100">
+            <span class="text-subtitle-1 font-weight-medium"
+              >Filtros e Período</span
             >
-              <template #activator="{ props }">
-                <v-text-field
-                  v-model="formattedStartDate"
-                  label="Data Inicial"
-                  prepend-inner-icon="mdi-calendar"
-                  readonly
-                  clearable
-                  :disabled="selectedPeriod !== 'custom'"
-                  v-bind="props"
-                  variant="outlined"
-                  density="comfortable"
-                  @click:clear="startDate = ''"
-                />
-              </template>
-              <v-date-picker
-                v-model="startDate"
-                :max="selectedPeriod !== 'custom' ? today : undefined"
-                @update:model-value="startMenu = false"
-              />
-            </v-menu>
-          </v-col>
-
-          <v-col cols="12" md="3">
-            <v-menu
-              v-model="endMenu"
-              :close-on-content-click="false"
-              transition="scale-transition"
-              offset-y
+            <v-chip
+              v-if="!filterPanel.includes(0)"
+              color="primary"
+              variant="flat"
+              size="small"
+              class="mr-4"
             >
-              <template #activator="{ props }">
-                <v-text-field
-                  v-model="formattedEndDate"
-                  label="Data Final"
-                  prepend-inner-icon="mdi-calendar"
-                  readonly
-                  clearable
-                  :disabled="selectedPeriod !== 'custom'"
-                  v-bind="props"
-                  variant="outlined"
-                  density="comfortable"
-                  @click:clear="endDate = ''"
-                />
-              </template>
-              <v-date-picker
-                v-model="endDate"
-                :min="startDate"
-                :max="selectedPeriod !== 'custom' ? today : undefined"
-                @update:model-value="endMenu = false"
+              {{ selectedPeriodText }}
+            </v-chip>
+          </div>
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
+          <v-row class="mt-2">
+            <v-col cols="12" md="3">
+              <v-select
+                v-model="selectedPeriod"
+                :items="dateRanges"
+                label="Período"
+                variant="outlined"
+                density="comfortable"
+                item-title="text"
+                item-value="value"
+                hide-details
               />
-            </v-menu>
-          </v-col>
+            </v-col>
 
-          <v-col cols="12" md="3">
-            <v-select
-              v-model="groupBy"
-              :items="groupByOptions"
-              label="Agrupar por"
-              variant="outlined"
-              density="comfortable"
-              hide-details
-              item-title="text"
-              item-value="value"
-            />
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
-
-    <v-row class="mb-6" dense>
-      <v-col
-        v-for="(stat, index) in summaryStats"
-        :key="index"
-        cols="12"
-        sm="6"
-        md="6"
-      >
-        <v-card :color="stat.color" dark class="h-100">
-          <v-card-text class="d-flex justify-space-between align-center">
-            <div>
-              <div class="text-subtitle-2 mb-1">{{ stat.title }}</div>
-              <div class="text-h5 font-weight-bold">
-                {{
-                  stat.valueFormatter
-                    ? stat.valueFormatter(stat.value)
-                    : formatCurrency(stat.value)
-                }}
-              </div>
-              <div
-                v-if="stat.change !== undefined"
-                class="text-caption d-flex align-center mt-1"
+            <v-col cols="12" md="3">
+              <v-menu
+                v-model="startMenu"
+                :close-on-content-click="false"
+                transition="scale-transition"
+                offset-y
               >
-                <v-icon
-                  :color="stat.change >= 0 ? 'green' : 'red'"
-                  size="small"
+                <template #activator="{ props }">
+                  <v-text-field
+                    v-model="formattedStartDate"
+                    label="Data Inicial"
+                    prepend-inner-icon="mdi-calendar"
+                    readonly
+                    clearable
+                    :disabled="selectedPeriod !== 'custom'"
+                    v-bind="props"
+                    variant="outlined"
+                    density="comfortable"
+                    hide-details
+                    @click:clear="startDate = ''"
+                  />
+                </template>
+                <v-date-picker
+                  v-model="startDate"
+                  :max="endDate || today"
+                  @update:model-value="startMenu = false"
+                  color="primary"
+                />
+              </v-menu>
+            </v-col>
+
+            <v-col cols="12" md="3">
+              <v-menu
+                v-model="endMenu"
+                :close-on-content-click="false"
+                transition="scale-transition"
+                offset-y
+              >
+                <template #activator="{ props }">
+                  <v-text-field
+                    v-model="formattedEndDate"
+                    label="Data Final"
+                    prepend-inner-icon="mdi-calendar"
+                    readonly
+                    clearable
+                    :disabled="selectedPeriod !== 'custom'"
+                    v-bind="props"
+                    variant="outlined"
+                    density="comfortable"
+                    hide-details
+                    @click:clear="endDate = ''"
+                  />
+                </template>
+                <v-date-picker
+                  v-model="endDate"
+                  :min="startDate"
+                  :max="today"
+                  @update:model-value="endMenu = false"
+                  color="primary"
+                />
+              </v-menu>
+            </v-col>
+
+            <v-col cols="12" md="3">
+              <v-select
+                v-model="groupBy"
+                :items="groupByOptions"
+                label="Agrupar por"
+                variant="outlined"
+                density="comfortable"
+                hide-details
+                item-title="text"
+                item-value="value"
+              />
+            </v-col>
+          </v-row>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="text" color="grey-darken-1" @click="resetFilters">
+              Limpar Filtros
+            </v-btn>
+            <v-btn variant="text" color="primary" @click="filterPanel = []">
+              Aplicar
+            </v-btn>
+          </v-card-actions>
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+    </v-expansion-panels>
+
+    <v-skeleton-loader
+      :loading="loading"
+      type="article, article, article"
+      class="mb-6"
+    >
+      <v-row dense>
+        <v-col
+          v-for="(stat, index) in summaryStats"
+          :key="index"
+          cols="12"
+          sm="6"
+          md="6"
+        >
+          <!-- 3. KPIs Tonais: Muito mais suave e moderno que cores sólidas -->
+          <v-card :color="stat.color" variant="tonal" class="h-100">
+            <v-card-text class="d-flex justify-space-between align-center">
+              <div>
+                <div class="text-subtitle-1 mb-1">{{ stat.title }}</div>
+                <div class="text-h4 font-weight-bold">
+                  {{
+                    stat.valueFormatter
+                      ? stat.valueFormatter(stat.value)
+                      : formatCurrency(stat.value)
+                  }}
+                </div>
+                <div
+                  v-if="stat.change !== null"
+                  class="text-caption d-flex align-center mt-1"
                 >
-                  {{ stat.change >= 0 ? "mdi-arrow-up" : "mdi-arrow-down" }}
-                </v-icon>
-                <span class="ml-1">
-                  {{ Math.abs(stat.change).toFixed(1) }}%
-                  {{ stat.changeLabel || "em relação ao período anterior" }}
-                </span>
+                  <!-- Conteúdo de variação foi removido da computed, então isso não será renderizado -->
+                </div>
               </div>
-            </div>
-            <v-avatar :color="stat.iconColor" size="48">
-              <v-icon>{{ stat.icon }}</v-icon>
-            </v-avatar>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+              <v-avatar :color="stat.color" size="48" variant="flat">
+                <v-icon color="white">{{ stat.icon }}</v-icon>
+              </v-avatar>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-skeleton-loader>
 
     <v-row class="mb-6" dense>
-      <v-col cols="12">
-        <v-card class="d-flex flex-column">
-          <v-card-title class="d-flex align-center justify-space-between">
-            
-            <div style="width: 48px;"></div> <div class="d-flex align-center">
-              <span class="text-h6">Distribuição por Categoria</span>
-              
-              <div class="d-flex align-center ml-2">
-                <v-tooltip
-                  :text="
-                    isRulesEnabled
-                      ? 'Desativar regras de gastos'
-                      : 'Ativar regras de gastos'
-                  "
-                >
-                  <template v-slot:activator="{ props }">
-                    <v-btn
-                      v-bind="props"
-                      :icon="
-                        isRulesEnabled
-                          ? 'mdi-toggle-switch'
-                          : 'mdi-toggle-switch-off-outline'
-                      "
-                      :color="isRulesEnabled ? 'primary' : 'grey-darken-1'"
-                      variant="text"
-                      size="small"
-                      @click="isRulesEnabled = !isRulesEnabled"
-                    ></v-btn>
-                  </template>
-                </v-tooltip>
-                <span
-                  class="ml-1 text-body-2"
-                  @click="isRulesEnabled = !isRulesEnabled"
-                  style="cursor: pointer"
-                  :class="isRulesEnabled ? 'text-primary' : 'text-grey-darken-1'"
-                >
-                  Regras
-                </span>
-              </div>
-            </div>
-
-            <div style="width: 48px; text-align: right;">
-              <v-btn
-                v-if="isRulesEnabled"
-                icon="mdi-pencil"
-                variant="text"
-                size="small"
-                @click="openRuleDialog"
-                title="Editar regras de distribuição"
-              ></v-btn>
-            </div>
+      <v-col cols="12" lg="12">
+        <v-card class="d-flex flex-column h-100" elevation="2">
+          <v-card-title class="d-flex align-center">
+            <span class="text-h6">Distribuição por Categoria</span>
+            <v-spacer></v-spacer>
+            <v-tooltip text="Editar regras de distribuição" location="top">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-if="isRulesEnabled"
+                  v-bind="props"
+                  icon="mdi-pencil-outline"
+                  variant="text"
+                  size="small"
+                  @click="openRuleDialog"
+                ></v-btn>
+              </template>
+            </v-tooltip>
+            <v-tooltip
+              :text="isRulesEnabled ? 'Desativar regras' : 'Ativar regras'"
+              location="top"
+            >
+              <template v-slot:activator="{ props }">
+                <v-switch
+                  v-bind="props"
+                  v-model="isRulesEnabled"
+                  color="primary"
+                  density="compact"
+                  hide-details
+                  class="ml-2"
+                ></v-switch>
+              </template>
+            </v-tooltip>
           </v-card-title>
-          
-          <v-divider></v-divider>
-          
-          <v-card-text class="flex-grow-1 pt-4">
+          <v-divider class="mt-2"></v-divider>
+          <v-card-text class="flex-grow-1 pa-0">
+            <v-fade-transition>
+              <v-overlay
+                v-if="loading || barChartData.length === 0"
+                absolute
+                scrim="rgba(255, 255, 255, 0.7)"
+                class="d-flex align-center justify-center"
+              >
+                <v-progress-circular
+                  v-if="loading"
+                  indeterminate
+                  color="primary"
+                  size="64"
+                ></v-progress-circular>
+                <div v-else class="text-center text-grey-darken-1">
+                  <v-icon size="64">mdi-chart-bar-off</v-icon>
+                  <div class="text-h6">Sem dados de categoria</div>
+                </div>
+              </v-overlay>
+            </v-fade-transition>
+
             <CategoryBarChart
               :data="barChartData"
+              class="pa-2"
               :height="400"
-              class="w-100 h-100"
-              :salary="salary"
-              :ideal-distribution="isRulesEnabled ? idealDistribution : undefined"
+              :salary="salaryForPeriod"
+              :ideal-distribution="
+                isRulesEnabled ? idealDistribution : undefined
+              "
             />
           </v-card-text>
         </v-card>
       </v-col>
 
-      <v-col cols="12">
-        <v-card class="d-flex flex-column">
-          <v-card-title class="text-h6 text-center">
+      <v-col cols="12" lg="12">
+        <v-card class="d-flex flex-column h-100" elevation="2">
+          <v-card-title class="text-h6">
             Despesas ao Longo do Tempo
           </v-card-title>
-          <v-divider class="my-1"></v-divider>
-          <v-card-text class="flex-grow-1">
+          <v-card-subtitle> Agrupado por {{ groupByText }} </v-card-subtitle>
+          <v-divider class="mt-2"></v-divider>
+          <v-card-text class="flex-grow-1 pa-0">
+            <v-fade-transition>
+              <v-overlay
+                v-if="loading || lineChartData.length === 0"
+                absolute
+                scrim="rgba(255, 255, 255, 0.7)"
+                class="d-flex align-center justify-center"
+              >
+                <v-progress-circular
+                  v-if="loading"
+                  indeterminate
+                  color="primary"
+                  size="64"
+                ></v-progress-circular>
+                <div v-else class="text-center text-grey-darken-1">
+                  <v-icon size="64">mdi-chart-line-variant</v-icon>
+                  <div class="text-h6">Sem dados de despesas</div>
+                </div>
+              </v-overlay>
+            </v-fade-transition>
+
             <ExpenseLineChart
               :data="lineChartData"
               :group-by="groupBy"
               :height="400"
-              class="w-100 h-100"
             />
           </v-card-text>
         </v-card>
@@ -225,30 +271,34 @@
     </v-row>
   </v-container>
 
-  <v-dialog
-    v-if="isRulesEnabled"
-    v-model="isRuleDialogOpen"
-    max-width="600"
-    persistent
-  >
+  <v-dialog v-model="isRuleDialogOpen" max-width="600" persistent>
     <v-card>
-      <v-card-title class="text-h5">
-        Editar Regras de Distribuição
-      </v-card-title>
-      <v-card-text>
-        <v-alert
-          v-if="dialogError"
-          type="error"
-          variant="tonal"
-          density="compact"
-          class="mb-4"
+      <v-card-title
+        class="text-h6 d-flex align-center justify-space-between bg-primary-gradient"
+      >
+        <div class="d-flex align-center">
+          <v-icon class="me-3" size="28">mdi-plus-circle-outline</v-icon>
+          Editar Regras de Distribuição
+        </div>
+        <v-btn
+          icon
+          variant="text"
+          size="small"
+          aria-label="Fechar"
+          @click="closeCard"
         >
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-card-title>
+
+      <v-divider />
+      <v-card-text>
+        <v-alert v-if="dialogError" type="error" variant="tonal" class="mb-4">
           {{ dialogError }}
         </v-alert>
 
         <p class="text-body-2 mb-4">
-          Defina a porcentagem ideal do seu salário para cada categoria. A soma
-          deve ser 100%.
+          Defina a porcentagem ideal do seu salário para cada categoria.
         </p>
         <v-form>
           <v-text-field
@@ -262,22 +312,49 @@
             density="compact"
             class="mb-2"
             :rules="[rules.required, rules.number]"
+            min="0"
+            max="100"
           />
-          <v-alert
-            v-if="distributionTotal !== 100"
-            type="warning"
-            density="compact"
-            variant="tonal"
-            class="mt-2"
-          >
-            Total: {{ distributionTotal }}%. O ideal é 100%.
-          </v-alert>
+
+          <div class="mt-4">
+            <div class="d-flex justify-space-between text-body-2 mb-1">
+              <span>Total</span>
+              <span
+                :class="{
+                  'text-error': distributionTotal !== 100,
+                  'text-success': distributionTotal === 100,
+                }"
+              >
+                {{ distributionTotal }}% / 100%
+              </span>
+            </div>
+            <v-progress-linear
+              v-model="distributionTotal"
+              :color="distributionTotal === 100 ? 'success' : 'error'"
+              height="8"
+              rounded
+            ></v-progress-linear>
+            <v-alert
+              v-if="distributionTotal !== 100"
+              type="error"
+              density="compact"
+              variant="tonal"
+              class="mt-3"
+            >
+              A soma deve ser exatamente 100%.
+            </v-alert>
+          </div>
         </v-form>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn text @click="isRuleDialogOpen = false">Cancelar</v-btn>
-        <v-btn color="primary" @click="saveRules">Salvar</v-btn>
+        <v-btn
+          color="primary"
+          @click="saveRules"
+          :disabled="distributionTotal !== 100"
+          >Salvar</v-btn
+        >
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -293,6 +370,7 @@ import {
   startOfMonth,
   startOfYear,
   getWeek,
+  differenceInDays,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { storeToRefs } from "pinia";
@@ -307,6 +385,8 @@ const categoriesStore = useCategoriesStore();
 const loading = computed(
   () => expensesStore.loading || categoriesStore.loading
 );
+
+const filterPanel = ref([0]);
 const groupBy = ref<"day" | "week" | "month">("day");
 const selectedPeriod = ref("30d");
 const startDate = ref("");
@@ -314,18 +394,44 @@ const endDate = ref("");
 const startMenu = ref(false);
 const endMenu = ref(false);
 const today = format(new Date(), "yyyy-MM-dd");
-
 const isRulesEnabled = ref(false);
-const RULES_ENABLED_KEY = "financialRulesEnabled"; 
+const RULES_ENABLED_KEY = "financialRulesEnabled";
 const isRuleDialogOpen = ref(false);
 const dialogError = ref<string | null>(null);
-const { salary } = storeToRefs(expensesStore);
+const { salaries: allSalaries } = storeToRefs(expensesStore);
 const { distributionRules: idealDistribution } = storeToRefs(categoriesStore);
 const tempDistribution = ref<Record<string, number>>({});
 
 const rules = reactive({
-  required: (v: any) => !!v || "Obrigatório",
+  required: (v: any) => !!v || v === 0 || "Obrigatório",
   number: (v: any) => !isNaN(parseFloat(v)) || "Inválido",
+});
+
+const salaryForPeriod = computed(() => {
+  if (!allSalaries.value || allSalaries.value.length === 0) {
+    return 0;
+  }
+  if (!endDate.value) {
+    return 0;
+  }
+
+  const periodEnd = new Date(endDate.value);
+  periodEnd.setHours(23, 59, 59, 999);
+
+  const applicableSalaries = allSalaries.value.filter((s) => {
+    const salaryDate = new Date(s.date);
+    return salaryDate <= periodEnd;
+  });
+
+  if (applicableSalaries.length === 0) {
+    return 0;
+  }
+
+  applicableSalaries.sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
+  return applicableSalaries[0].value;
 });
 
 const distributionTotal = computed(() => {
@@ -344,8 +450,8 @@ function openRuleDialog() {
 async function saveRules() {
   dialogError.value = null;
 
-  if (distributionTotal.value > 100) {
-    dialogError.value = "A soma das porcentagens não pode passar de 100%.";
+  if (distributionTotal.value !== 100) {
+    dialogError.value = "A soma das porcentagens deve ser exatamente 100%.";
     return;
   }
 
@@ -361,7 +467,6 @@ async function saveRules() {
 watch(isRulesEnabled, (newValue) => {
   localStorage.setItem(RULES_ENABLED_KEY, String(newValue));
 });
-
 
 const groupByOptions = [
   { text: "Dia", value: "day" },
@@ -390,6 +495,7 @@ const formatCurrency = (value: number) =>
     currency: "BRL",
     minimumFractionDigits: 2,
   }) ?? "R$ 0,00";
+const formatNumber = (value: number) => value?.toLocaleString("pt-BR") ?? "0";
 const formatDate = (date: string | Date, fmt = "dd/MM/yyyy") =>
   date ? format(new Date(date), fmt, { locale: ptBR }) : "";
 
@@ -456,15 +562,19 @@ watch(
   { immediate: true }
 );
 
-const filteredExpenses = computed(() => {
-  if (!startDate.value || !endDate.value) return [];
-  const start = new Date(startDate.value);
-  const end = new Date(endDate.value);
+function getExpensesForPeriod(start: Date, end: Date) {
   end.setHours(23, 59, 59, 999);
   return expensesStore.expenses.filter((exp) => {
     const date = new Date(exp.date);
     return date >= start && date <= end && !isNaN(Number(exp.value));
   });
+}
+
+const filteredExpenses = computed(() => {
+  if (!startDate.value || !endDate.value) return [];
+  const start = new Date(startDate.value);
+  const end = new Date(endDate.value);
+  return getExpensesForPeriod(start, end);
 });
 
 function groupExpensesBy(expenses: any[], group: "day" | "week" | "month") {
@@ -505,29 +615,43 @@ const summaryStats = computed(() => {
   const current = filteredExpenses.value;
   const currentTotal = current.reduce((sum, e) => sum + Number(e.value), 0);
   const currentCount = current.length;
-  const dayCount =
-    (new Date(endDate.value).getTime() - new Date(startDate.value).getTime()) /
-      (1000 * 60 * 60 * 24) +
-    1;
-  const avgPerDay = currentCount ? currentTotal / dayCount : 0;
 
   return [
     {
       title: "Total Gasto",
       value: currentTotal,
-      icon: "mdi-cash-multiple",
-      iconColor: "white",
-      color: "secundary",
+      change: null,
+      changeLabel: "vs período anterior",
+      icon: "mdi-cash-remove",
+      color: "red-darken-1",
     },
     {
-      title: "Média por Dia",
-      value: avgPerDay,
+      title: "Média por Transação",
+      value: currentCount > 0 ? currentTotal / currentCount : 0,
+      change: null,
       icon: "mdi-chart-line",
-      iconColor: "white",
-      color: "secundary",
+      color: "primary",
     },
   ];
 });
+
+const groupByText = computed(() => {
+  return (
+    groupByOptions.find((opt) => opt.value === groupBy.value)?.text || "Dia"
+  );
+});
+
+const selectedPeriodText = computed(() => {
+  return (
+    dateRanges.find((opt) => opt.value === selectedPeriod.value)?.text ||
+    "Personalizado"
+  );
+});
+
+function resetFilters() {
+  selectedPeriod.value = "30d";
+  groupBy.value = "day";
+}
 
 const refreshData = async () => {
   try {
