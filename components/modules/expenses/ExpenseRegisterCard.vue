@@ -32,7 +32,10 @@
           class="mb-4"
           dense
         >
-          {{ errorMessage || 'Ocorreu um erro ao salvar o gasto. Tente novamente.' }}
+          {{
+            errorMessage ||
+            "Ocorreu um erro ao salvar o gasto. Tente novamente."
+          }}
         </v-alert>
 
         <v-alert
@@ -41,14 +44,12 @@
           class="mb-4"
           dense
         >
-          {{ successMessage || 'Gasto salvo com sucesso!' }}
+          {{ successMessage || "Gasto salvo com sucesso!" }}
         </v-alert>
 
         <v-row dense>
-          <!-- Categoria -->
           <v-col cols="12">
             <div class="d-flex align-center justify-end mb-1">
-              
               <v-btn
                 size="small"
                 variant="text"
@@ -79,8 +80,7 @@
               >
                 <v-icon start :icon="cat.icon" />
                 {{ cat.name }}
-                
-                <!-- Botões de ação visíveis -->
+
                 <div class="d-flex align-center ml-2 category-actions">
                   <v-btn
                     icon
@@ -103,7 +103,7 @@
                     <v-icon size="16">mdi-delete</v-icon>
                   </v-btn>
                 </div>
-                
+
                 <v-menu
                   v-model="cat.showMenu"
                   :activator="cat.menuActivator"
@@ -122,7 +122,9 @@
                       prepend-icon="mdi-delete"
                       color="error"
                     >
-                      <v-list-item-title class="text-error">Excluir</v-list-item-title>
+                      <v-list-item-title class="text-error"
+                        >Excluir</v-list-item-title
+                      >
                     </v-list-item>
                   </v-list>
                 </v-menu>
@@ -148,7 +150,6 @@
                   @contextmenu.prevent="openCategoryMenu($event, item.raw)"
                 >
                   <template #append>
-                    <!-- Botões de ação visíveis para cada item -->
                     <div class="d-flex align-center">
                       <v-btn
                         icon
@@ -170,15 +171,28 @@
                         <v-icon size="16">mdi-delete</v-icon>
                       </v-btn>
                     </div>
-                    
-                    <!-- Menu de contexto (mantido para compatibilidade) -->
-                    <v-menu v-model="item.raw.showMenu" :activator="item.raw.menuActivator" location="end" offset-x>
+
+                    <v-menu
+                      v-model="item.raw.showMenu"
+                      :activator="item.raw.menuActivator"
+                      location="end"
+                      offset-x
+                    >
                       <v-list density="compact">
-                        <v-list-item @click="editCategory(item.raw)" prepend-icon="mdi-pencil">
+                        <v-list-item
+                          @click="editCategory(item.raw)"
+                          prepend-icon="mdi-pencil"
+                        >
                           <v-list-item-title>Editar</v-list-item-title>
                         </v-list-item>
-                        <v-list-item @click="deleteCategory(item.raw)" prepend-icon="mdi-delete" color="error">
-                          <v-list-item-title class="text-error">Excluir</v-list-item-title>
+                        <v-list-item
+                          @click="deleteCategory(item.raw)"
+                          prepend-icon="mdi-delete"
+                          color="error"
+                        >
+                          <v-list-item-title class="text-error"
+                            >Excluir</v-list-item-title
+                          >
                         </v-list-item>
                       </v-list>
                     </v-menu>
@@ -188,7 +202,6 @@
             </v-combobox>
           </v-col>
 
-          <!-- Valor e Data -->
           <v-col cols="12" md="6">
             <v-text-field
               v-model="formattedValue"
@@ -213,7 +226,6 @@
             />
           </v-col>
 
-          <!-- Descrição -->
           <v-col cols="12">
             <v-text-field
               v-model="description"
@@ -224,7 +236,6 @@
             />
           </v-col>
 
-          <!-- Pagamento -->
           <v-col cols="12" md="6">
             <v-select
               v-model="selectedPaymentMethod"
@@ -314,16 +325,13 @@
         </v-row>
       </v-form>
     </v-card-text>
-
-    <!-- Modal para criar nova categoria -->
     <v-dialog v-model="showCategoryDialog" max-width="500" persistent>
       <v-card>
-        <v-card-title class="text-h6 d-flex align-start bg-primary-gradient"
-    >
+        <v-card-title class="text-h6 d-flex align-start bg-primary-gradient">
           <v-icon class="me-3" size="24">mdi-tag-plus</v-icon>
           Nova Categoria
         </v-card-title>
-        
+
         <v-card-text>
           <v-form ref="categoryForm" @submit.prevent="createCategory">
             <v-row dense>
@@ -338,7 +346,7 @@
                   placeholder="Ex: Alimentação"
                 />
               </v-col>
-              
+
               <v-col cols="12">
                 <v-select
                   v-model="newCategory.icon"
@@ -362,7 +370,7 @@
             </v-row>
           </v-form>
         </v-card-text>
-        
+
         <v-card-actions class="pa-4">
           <v-spacer />
           <v-btn
@@ -391,7 +399,7 @@
           <v-icon class="me-3" size="24">mdi-pencil</v-icon>
           Editar Categoria
         </v-card-title>
-        
+
         <v-card-text>
           <v-form ref="editCategoryForm" @submit.prevent="updateCategory">
             <v-row dense>
@@ -406,7 +414,7 @@
                   placeholder="Ex: Alimentação"
                 />
               </v-col>
-              
+
               <v-col cols="12">
                 <v-select
                   v-model="editingCategory.icon"
@@ -430,7 +438,7 @@
             </v-row>
           </v-form>
         </v-card-text>
-        
+
         <v-card-actions class="pa-4">
           <v-spacer />
           <v-btn
@@ -459,16 +467,17 @@
           <v-icon class="me-3" size="24" color="error">mdi-delete</v-icon>
           Excluir Categoria
         </v-card-title>
-        
+
         <v-card-text>
           <p class="mb-2">
-            Tem certeza que deseja excluir a categoria <strong>"{{ deletingCategory?.name }}"</strong>?
+            Tem certeza que deseja excluir a categoria
+            <strong>"{{ deletingCategory?.name }}"</strong>?
           </p>
           <p class="text-caption text-medium-emphasis">
             Esta ação não pode ser desfeita e pode afetar gastos existentes.
           </p>
         </v-card-text>
-        
+
         <v-card-actions class="pa-4">
           <v-spacer />
           <v-btn
@@ -497,11 +506,9 @@ import { parseISO, format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useExpensesStore } from "~/stores/useExpensesStore";
 import { useCategoriesStore } from "~/stores/useCategoriesStore";
-import type { CreateExpensePayload } from "~/types/expense";
 import type { Category } from "~/types/category";
 import DatePickerField from "~/components/ui/DatePickerField.vue";
 
-// Tipo estendido para categorias com menu
 interface CategoryWithMenu extends Category {
   showMenu: boolean;
   menuActivator: any;
@@ -513,12 +520,10 @@ const emit = defineEmits<{
 
 const expensesStore = useExpensesStore();
 const categoriesStore = useCategoriesStore();
-
 const isCardVisible = ref(true);
 const expenseForm = ref<any>(null);
 const categoryForm = ref<any>(null);
 const editCategoryForm = ref<any>(null);
-
 const rawTotalValue = ref(0);
 const formattedValue = ref("");
 const selectedPaymentMethod = ref("Cartão de Crédito");
@@ -532,24 +537,21 @@ const submissionState = ref<"idle" | "success" | "error">("idle");
 const errorMessage = ref("");
 const successMessage = ref("");
 
-// Categoria
 const showCategoryDialog = ref(false);
 const isCreatingCategory = ref(false);
 const newCategory = ref({
   name: "",
-  icon: ""
+  icon: "",
 });
 
-// Editar categoria
 const showEditCategoryDialog = ref(false);
 const isUpdatingCategory = ref(false);
 const editingCategory = ref({
   id: "",
   name: "",
-  icon: ""
+  icon: "",
 });
 
-// Excluir categoria
 const showDeleteCategoryDialog = ref(false);
 const isDeletingCategory = ref(false);
 const deletingCategory = ref<Category | null>(null);
@@ -585,7 +587,7 @@ const availableIcons = [
   "mdi-heart",
   "mdi-star",
   "mdi-diamond",
-  "mdi-crown"
+  "mdi-crown",
 ];
 
 const paymentMethods = [
@@ -598,13 +600,15 @@ const paymentMethods = [
 const cardOptions = ["Nubank", "Hipercard", "Santander", "Outro"];
 
 const categoryItems = computed(() =>
-  categoriesStore.categories.map((cat: Category): CategoryWithMenu => ({
-    id: cat.id,
-    name: cat.name,
-    icon: cat.icon,
-    showMenu: false,
-    menuActivator: null
-  }))
+  categoriesStore.categories.map(
+    (cat: Category): CategoryWithMenu => ({
+      id: cat.id,
+      name: cat.name,
+      icon: cat.icon,
+      showMenu: false,
+      menuActivator: null,
+    })
+  )
 );
 
 const suggestedCategories = computed(() => {
@@ -629,7 +633,6 @@ const formattedExpenseDate = computed(() =>
   format(parseISO(selectedExpenseDate.value), "MMM/yy", { locale: ptBR })
 );
 
-// Regras de validação
 const categoryRules = [(v: any) => !!v || "Escolha uma categoria"];
 const paymentMethodRules = [
   (v: any) => !!v || "Escolha um método de pagamento",
@@ -643,18 +646,14 @@ const totalValueRules = [
     "O valor deve ser maior que zero",
 ];
 
-// Regras para categoria
 const categoryNameRules = [
   (v: string) => !!v || "Nome da categoria é obrigatório",
   (v: string) => v.length >= 2 || "Nome deve ter pelo menos 2 caracteres",
-  (v: string) => v.length <= 50 || "Nome deve ter no máximo 50 caracteres"
+  (v: string) => v.length <= 50 || "Nome deve ter no máximo 50 caracteres",
 ];
 
-const categoryIconRules = [
-  (v: string) => !!v || "Ícone é obrigatório"
-];
+const categoryIconRules = [(v: string) => !!v || "Ícone é obrigatório"];
 
-// Watchers
 watch(selectedPaymentMethod, (newMethod) => {
   if (newMethod !== "Cartão de Crédito") {
     numberOfInstallments.value = 1;
@@ -662,7 +661,6 @@ watch(selectedPaymentMethod, (newMethod) => {
   }
 });
 
-// Utilitários
 const formatCurrencyInput = (value: string) => {
   let digits = (value || "").replace(/\D/g, "").replace(/^0+/, "");
   if (!digits) {
@@ -697,7 +695,7 @@ const resetForm = () => {
 const resetCategoryForm = () => {
   newCategory.value = {
     name: "",
-    icon: ""
+    icon: "",
   };
   categoryForm.value?.resetValidation?.();
 };
@@ -706,7 +704,7 @@ const resetEditCategoryForm = () => {
   editingCategory.value = {
     id: "",
     name: "",
-    icon: ""
+    icon: "",
   };
   editCategoryForm.value?.resetValidation?.();
 };
@@ -717,8 +715,8 @@ const closeDialog = () => {
 };
 
 const closeCard = () => {
-  resetForm(); // opcional, se quiser limpar o formulário
-  emit("close"); // envia evento para o pai fechar o v-dialog
+  resetForm();
+  emit("close");
 };
 
 // Menu de contexto para categorias
@@ -728,26 +726,22 @@ const openCategoryMenu = (event: MouseEvent, category: CategoryWithMenu) => {
   category.menuActivator = event.currentTarget;
 };
 
-// Editar categoria
 const editCategory = (category: CategoryWithMenu) => {
   editingCategory.value = {
     id: category.id,
     name: category.name,
-    icon: category.icon
+    icon: category.icon,
   };
   showEditCategoryDialog.value = true;
   category.showMenu = false;
-  
-  // Fechar o combobox se estiver aberto
+
   if (selectedCategory.value === category.id) {
-    // Pequeno delay para permitir que o modal abra primeiro
     setTimeout(() => {
       selectedCategory.value = category.id;
     }, 100);
   }
 };
 
-// Atualizar categoria
 async function updateCategory() {
   const { valid } = await editCategoryForm.value.validate();
   if (!valid) return;
@@ -757,33 +751,32 @@ async function updateCategory() {
   try {
     const categoryPayload = {
       name: editingCategory.value.name.toUpperCase(),
-      icon: editingCategory.value.icon
+      icon: editingCategory.value.icon,
     };
 
-    await categoriesStore.updateCategory(editingCategory.value.id, categoryPayload);
-    
-    // Fechar modal e limpar formulário
+    await categoriesStore.updateCategory(
+      editingCategory.value.id,
+      categoryPayload
+    );
+
     showEditCategoryDialog.value = false;
     resetEditCategoryForm();
-    
-    // Se a categoria editada era a selecionada, atualizar a seleção
+
     if (selectedCategory.value === editingCategory.value.id) {
       const updatedCategory = categoriesStore.categories.find(
-        cat => cat.id === editingCategory.value.id
+        (cat) => cat.id === editingCategory.value.id
       );
       if (updatedCategory) {
         selectedCategory.value = updatedCategory.id;
       }
     }
-    
-    // Mostrar mensagem de sucesso
+
     successMessage.value = "Categoria atualizada com sucesso!";
     submissionState.value = "success";
     setTimeout(() => {
       submissionState.value = "idle";
       successMessage.value = "";
     }, 2000);
-    
   } catch (error) {
     console.error("Erro ao atualizar categoria:", error);
     errorMessage.value = "Erro ao atualizar categoria. Tente novamente.";
@@ -797,22 +790,18 @@ async function updateCategory() {
   }
 }
 
-// Excluir categoria
 const deleteCategory = (category: CategoryWithMenu) => {
   deletingCategory.value = category;
   showDeleteCategoryDialog.value = true;
   category.showMenu = false;
-  
-  // Fechar o combobox se estiver aberto
+
   if (selectedCategory.value === category.id) {
-    // Pequeno delay para permitir que o modal abra primeiro
     setTimeout(() => {
       selectedCategory.value = category.id;
     }, 100);
   }
 };
 
-// Confirmar exclusão
 async function confirmDeleteCategory() {
   if (!deletingCategory.value) return;
 
@@ -820,27 +809,21 @@ async function confirmDeleteCategory() {
 
   try {
     await categoriesStore.deleteCategory(deletingCategory.value.id);
-    
-    // Salvar o ID antes de limpar
+
     const deletedCategoryId = deletingCategory.value?.id;
-    
-    // Fechar modal
     showDeleteCategoryDialog.value = false;
     deletingCategory.value = null;
-    
-    // Se a categoria excluída era a selecionada, limpar a seleção
+
     if (deletedCategoryId && selectedCategory.value === deletedCategoryId) {
       selectedCategory.value = null;
     }
-    
-    // Mostrar mensagem de sucesso
+
     successMessage.value = "Categoria excluída com sucesso!";
     submissionState.value = "success";
     setTimeout(() => {
       submissionState.value = "idle";
       successMessage.value = "";
     }, 2000);
-    
   } catch (error) {
     console.error("Erro ao excluir categoria:", error);
     errorMessage.value = "Erro ao excluir categoria. Tente novamente.";
@@ -854,7 +837,6 @@ async function confirmDeleteCategory() {
   }
 }
 
-// Criar categoria
 async function createCategory() {
   const { valid } = await categoryForm.value.validate();
   if (!valid) return;
@@ -864,31 +846,27 @@ async function createCategory() {
   try {
     const categoryPayload = {
       name: newCategory.value.name.toUpperCase(),
-      icon: newCategory.value.icon
+      icon: newCategory.value.icon,
     };
 
     await categoriesStore.createCategory(categoryPayload);
-    
-    // Fechar modal e limpar formulário
+
     showCategoryDialog.value = false;
     resetCategoryForm();
-    
-    // Selecionar automaticamente a nova categoria criada
+
     const newCategoryCreated = categoriesStore.categories.find(
-      cat => cat.name === categoryPayload.name
+      (cat) => cat.name === categoryPayload.name
     );
     if (newCategoryCreated) {
       selectedCategory.value = newCategoryCreated.id;
     }
-    
-    // Mostrar mensagem de sucesso
+
     successMessage.value = "Categoria criada com sucesso!";
     submissionState.value = "success";
     setTimeout(() => {
       submissionState.value = "idle";
       successMessage.value = "";
     }, 2000);
-    
   } catch (error) {
     console.error("Erro ao criar categoria:", error);
     errorMessage.value = "Erro ao criar categoria. Tente novamente.";
@@ -902,7 +880,6 @@ async function createCategory() {
   }
 }
 
-// Submit
 async function submitExpense() {
   const { valid } = await expenseForm.value.validate();
   if (!valid) return;
@@ -921,14 +898,17 @@ async function submitExpense() {
     for (let i = 0; i < installmentsCount; i++) {
       const currentDate = addMonths(initialDate, i);
       let categoryId: string;
-      if (typeof selectedCategory.value === 'object' && selectedCategory.value?.id) {
+      if (
+        typeof selectedCategory.value === "object" &&
+        selectedCategory.value?.id
+      ) {
         categoryId = selectedCategory.value.id;
-      } else if (typeof selectedCategory.value === 'string') {
+      } else if (typeof selectedCategory.value === "string") {
         categoryId = selectedCategory.value;
       } else {
-        throw new Error('Category ID is required');
+        throw new Error("Category ID is required");
       }
-        
+
       const payload = {
         CategoryId: categoryId,
         Value: total / installmentsCount,
@@ -963,7 +943,6 @@ async function submitExpense() {
   }
 }
 
-// Botão de submit
 const submitButtonColor = computed(() =>
   submissionState.value === "success"
     ? "success"
