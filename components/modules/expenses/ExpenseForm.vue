@@ -214,8 +214,6 @@ const submitForm = async () => {
       expensesToRegister.push(expensePayload);
     }
 
-    console.log("Despesas a serem registradas:", expensesToRegister);
-
     await Promise.all(
       expensesToRegister.map((expense) => expensesStore.addExpense(expense))
     );

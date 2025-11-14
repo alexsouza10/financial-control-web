@@ -2,10 +2,9 @@
   <div class="mx-auto max-w-3xl pa-2">
     <v-sheet
       class="d-flex align-center pa-2 mb-4"
-      rounded="lg"
+      rounded="md"
       elevation="2"
       color="primary"
-      theme="dark"
       style="position: sticky; top: 50px; z-index: 100"
     >
       <v-btn icon="mdi-chevron-left" variant="text" @click="previousMonth" />
@@ -23,7 +22,7 @@
     </div>
 
     <v-card
-      v-else-if="expensesForCurrentMonth.length === 0"
+      v-else-if="expensesForSelectedMonth.length === 0"
       class="text-center pa-8"
       flat
     >
@@ -37,57 +36,87 @@
     <template v-else>
       <v-card variant="tonal" class="mb-6 pa-3" :color="progressColor">
         <div class="d-flex justify-space-between align-center">
-          <div class="text-caption">Total Gasto</div>
+          <div class="text-caption">Total de Despesas no Mês</div>
           <div class="text-h5 font-weight-bold">
             {{ formatCurrency(monthlyTotal) }}
           </div>
         </div>
         <v-progress-linear
           :model-value="monthlyTotal"
-          :max="expensesStore.salary || monthlyTotal"
+          :max="currentSalary || monthlyTotal"
           :color="progressBarColor"
           height="6"
           rounded
           class="my-2"
         />
-        <div class="d-flex justify-space-between text-caption">
-          <span>Orçamento: {{ formatCurrency(expensesStore.salary) }}</span>
+        <div class="d-flex justify-space-between text-caption mb-2">
+          <span>Orçamento: {{ formatCurrency(currentSalary) }}</span>
           <span
-            >Restante:
-            {{ formatCurrency(expensesStore.salary - monthlyTotal) }}</span
+            >Restante: {{ formatCurrency(currentSalary - monthlyTotal) }}</span
+          >
+        </div>
+
+        <v-divider class="my-2" />
+        <div
+          class="d-flex justify-space-between text-caption font-weight-medium"
+        >
+          <span class="text-success"
+            >Total Pago: {{ formatCurrency(totalPaid) }}</span
+          >
+          <span class="text-warning"
+            >A Pagar: {{ formatCurrency(totalUnpaid) }}</span
           >
         </div>
       </v-card>
 
-      <v-card rounded="lg" elevation="2">
+      <v-card rounded="md" elevation="2">
         <v-data-table
           :headers="headers"
-          :items="expensesForCurrentMonth"
+          :items="expensesForSelectedMonth"
           density="compact"
+          item-value="id"
+          :row-props="getRowProps"
         >
-          <template #[`item.title`]="{ item }">
+          <template #item.category="{ item }">
+            <v-icon
+              size="small"
+              :icon="categoryMap[item.categoryId]?.icon || 'mdi-help-circle'"
+              class="mr-2"
+            />
             {{ categoryMap[item.categoryId]?.name || "Sem categoria" }}
           </template>
 
-          <template #[`item.description`]="{ item }">
-            <span class="text-caption text-medium-emphasis">
-              {{ item.description || "-" }}
+          <template #item.description="{ value }">
+            <span :class="{ 'text-medium-emphasis fst-italic': !value }">
+              {{ value || "-" }}
             </span>
           </template>
 
-          <template #[`item.date`]="{ item }">
+          <template #item.date="{ value }">
             <span class="text-caption">
-              {{ format(parseISO(item.date), "dd/MM/yyyy", { locale: ptBR }) }}
+              {{ formatDate(value) }}
             </span>
           </template>
 
-          <template #[`item.value`]="{ item }">
-            <span class="font-weight-bold text-error">
+          <template #item.paid="{ item }">
+            <v-checkbox-btn
+              :model-value="item.paid"
+              @click="togglePaid(item)"
+              density="compact"
+              color="success"
+            />
+          </template>
+
+          <template #item.value="{ item }">
+            <span
+              class="font-weight-bold"
+              :class="item.paid ? 'text-success' : 'text-error'"
+            >
               {{ formatCurrency(item.value) }}
             </span>
           </template>
 
-          <template #[`item.actions`]="{ item }">
+          <template #item.actions="{ item }">
             <div class="text-no-wrap">
               <v-btn
                 icon="mdi-pencil"
@@ -140,17 +169,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import {
-  parseISO,
-  format,
-  getDaysInMonth,
-  startOfMonth,
-  addMonths,
-  subMonths,
-  isAfter,
-  isToday,
-  isYesterday,
-} from "date-fns";
+import { storeToRefs } from "pinia";
+import { parseISO, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Expense, UpdateExpensePayload, Category } from "~/types";
 import { useExpensesStore } from "~/stores/useExpensesStore";
@@ -165,7 +185,11 @@ const editDialog = ref(false);
 const editingExpense = ref<Expense | null>(null);
 const deleteDialog = ref(false);
 const expenseIdToDelete = ref<string | null>(null);
-const currentDate = ref(startOfMonth(new Date()));
+
+const { nextMonth, previousMonth } = expensesStore;
+
+const { currentDate, expensesForSelectedMonth, totalsForSelectedMonth } =
+  storeToRefs(expensesStore);
 
 interface CategoryDetail {
   name: string;
@@ -173,9 +197,19 @@ interface CategoryDetail {
   color: string;
 }
 
+const headers = [
+  { title: "Categoria", key: "category", sortable: false, align: "start" },
+  { title: "Descrição", key: "description", sortable: false, align: "start" },
+  { title: "Data", key: "date", align: "start" },
+  { title: "Pago", key: "paid", sortable: false, align: "center" },
+  { title: "Valor", key: "value", align: "end" },
+  { title: "Ações", key: "actions", sortable: false, align: "center" },
+];
+
+const currentSalary = computed(() => expensesStore.salaryForSelectedMonth);
+
 const categoryMap = computed(() => {
-  const map: Record<string, CategoryDetail> = {};
-  categoriesStore.categories.forEach((cat: Category) => {
+  return categoriesStore.categories.reduce((map, cat) => {
     if (cat.id) {
       map[cat.id] = {
         name: cat.name,
@@ -183,13 +217,9 @@ const categoryMap = computed(() => {
         color: cat.color || "primary",
       };
     }
-  });
-  return map;
+    return map;
+  }, {} as Record<string, CategoryDetail>);
 });
-
-function capitalizeFirstLetter(string: string) {
-  return string.charAt(0).toUpperCase() + string.slice(1);
-}
 
 const currentMonthLabel = computed(() => {
   const formattedDate = format(currentDate.value, "MMMM 'de' yyyy", {
@@ -197,82 +227,21 @@ const currentMonthLabel = computed(() => {
   });
   return capitalizeFirstLetter(formattedDate);
 });
-const currentMonthKey = computed(() => format(currentDate.value, "yyyy-MM"));
 
-function nextMonth() {
-  currentDate.value = addMonths(currentDate.value, 1);
-}
-function previousMonth() {
-  currentDate.value = subMonths(currentDate.value, 1);
-}
-
-// Adicione esta computed property no seu script
-const progressBarColor = computed(() => {
-  // Se a cor do card for 'primary' (azul), a barra será 'success' (verde).
-  // Caso contrário, a barra terá a mesma cor do card (warning/error).
-  return progressColor.value === "primary" ? "success" : progressColor.value;
-});
-
-const headers = [
-  { title: "Título", key: "title", sortable: false },
-  // { title: 'Descrição', key: 'description', sortable: false },
-  { title: "Data", key: "date" },
-  { title: "Valor", key: "value", align: "end" },
-  { title: "Ações", key: "actions", sortable: false, align: "center" },
-];
-
-const expensesForCurrentMonth = computed(() => {
-  if (isLoading.value) return [];
-  return expensesStore.expenses
-    .filter(
-      (exp: Expense) => exp.date && exp.date.startsWith(currentMonthKey.value)
-    )
-    .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-});
-
-const expensesGroupedByDay = computed(() => {
-  const groups: Record<string, Expense[]> = {};
-  for (const expense of expensesForCurrentMonth.value) {
-    const expenseDate = parseISO(expense.date);
-    let dayKey: string;
-
-    if (isToday(expenseDate)) {
-      dayKey = "Hoje";
-    } else if (isYesterday(expenseDate)) {
-      dayKey = "Ontem";
-    } else {
-      dayKey = format(expenseDate, "dd 'de' MMMM", { locale: ptBR });
-    }
-
-    if (!groups[dayKey]) {
-      groups[dayKey] = [];
-    }
-    groups[dayKey].push(expense);
-  }
-  return groups;
-});
-
-const monthlyTotal = computed(() =>
-  expensesForCurrentMonth.value.reduce((total, exp) => total + exp.value, 0)
-);
-
-const dailyAverage = computed(() => {
-  if (!expensesForCurrentMonth.value.length) return 0;
-  const daysInMonth = getDaysInMonth(currentDate.value);
-  return monthlyTotal.value / daysInMonth;
-});
-
-const largestExpenseInMonth = computed(() => {
-  if (!expensesForCurrentMonth.value.length) return 0;
-  return Math.max(...expensesForCurrentMonth.value.map((e) => e.value));
-});
+const monthlyTotal = computed(() => totalsForSelectedMonth.value.total);
+const totalPaid = computed(() => totalsForSelectedMonth.value.paid);
+const totalUnpaid = computed(() => totalsForSelectedMonth.value.unpaid);
 
 const progressColor = computed(() => {
-  if (!expensesStore.salary) return "primary";
-  const percentage = (monthlyTotal.value / expensesStore.salary) * 100;
+  if (!currentSalary.value) return "primary";
+  const percentage = (monthlyTotal.value / currentSalary.value) * 100;
   if (percentage > 90) return "error";
   if (percentage > 70) return "warning";
   return "primary";
+});
+
+const progressBarColor = computed(() => {
+  return progressColor.value === "primary" ? "success" : progressColor.value;
 });
 
 function openEditDialog(expense: Expense) {
@@ -284,7 +253,6 @@ async function handleExpenseUpdate(updatedExpense: UpdateExpensePayload) {
   if (!editingExpense.value?.id) return;
   try {
     await expensesStore.updateExpense(editingExpense.value.id, updatedExpense);
-    await expensesStore.fetchExpenses();
   } catch (err) {
     console.error("Erro ao atualizar gasto:", err);
   } finally {
@@ -306,7 +274,6 @@ async function confirmDelete() {
   if (expenseIdToDelete.value) {
     try {
       await expensesStore.deleteExpense(expenseIdToDelete.value);
-      await expensesStore.fetchExpenses();
     } catch (err) {
       console.error("Erro ao excluir gasto:", err);
     }
@@ -314,11 +281,56 @@ async function confirmDelete() {
   cancelDelete();
 }
 
+async function togglePaid(expense: Expense) {
+  if (!expense.id) {
+    console.error("ID da despesa ausente para atualização.");
+    return;
+  }
+
+  const newPaidStatus = !expense.paid;
+
+  try {
+    const payload: UpdateExpensePayload = {
+      categoryId: expense.categoryId,
+      value: expense.value,
+      description: expense.description,
+      paymentMethod: expense.paymentMethod,
+      installments: expense.installments,
+      card: expense.card,
+      date: expense.date,
+      paid: newPaidStatus,
+    };
+    await expensesStore.updateExpense(expense.id, payload);
+  } catch (err) {
+    console.error("Erro ao atualizar status de pagamento:", err);
+  }
+}
+
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
   }).format(value || 0);
+}
+
+function formatDate(dateString: string) {
+  if (!dateString) return "-";
+  try {
+    return format(parseISO(dateString), "dd/MM/yyyy", { locale: ptBR });
+  } catch (e) {
+    console.error("Data inválida:", dateString);
+    return "-";
+  }
+}
+
+function capitalizeFirstLetter(string: string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function getRowProps({ item }: { item: Expense }) {
+  return {
+    class: item.paid ? "expense-paid" : "",
+  };
 }
 
 onMounted(async () => {
@@ -336,4 +348,20 @@ onMounted(async () => {
   }
 });
 </script>
-<style scoped></style>
+
+<style scoped>
+:deep(.expense-paid) {
+  opacity: 0.6;
+  text-decoration: line-through;
+  transition: opacity 0.3s ease-in-out;
+}
+
+:deep(.expense-paid .v-checkbox-btn) {
+  text-decoration: none !important;
+  opacity: 1 !important;
+}
+
+:deep(.expense-paid td) {
+  text-decoration: inherit !important;
+}
+</style>

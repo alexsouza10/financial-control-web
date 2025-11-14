@@ -1,10 +1,13 @@
 <template>
-  <v-card rounded="xl" elevation="4" @keydown.esc.stop="closeDialog">
+  <v-card rounded="md" elevation="4" @keydown.esc.stop="closeDialog">
     <v-card-title
-      class="text-h6 d-flex align-center justify-space-between bg-primary-gradient"
+      class="text-h6 d-flex align-center justify-space-between text-white"
+      :style="{ background: `rgb(var(--v-theme-primary))` }"
     >
       <div class="d-flex align-center">
-        <v-icon class="me-3" size="28">mdi-plus-circle-outline</v-icon>
+        <v-icon class="me-3" size="28" color="white">
+          mdi-plus-circle-outline
+        </v-icon>
         Registrar Novo Gasto
       </div>
       <v-btn
@@ -13,6 +16,7 @@
         size="small"
         aria-label="Fechar"
         @click="closeCard"
+        color="white"
       >
         <v-icon>mdi-close</v-icon>
       </v-btn>
@@ -32,7 +36,10 @@
           class="mb-4"
           dense
         >
-          {{ errorMessage || 'Ocorreu um erro ao salvar o gasto. Tente novamente.' }}
+          {{
+            errorMessage ||
+            "Ocorreu um erro ao salvar o gasto. Tente novamente."
+          }}
         </v-alert>
 
         <v-alert
@@ -41,14 +48,12 @@
           class="mb-4"
           dense
         >
-          {{ successMessage || 'Gasto salvo com sucesso!' }}
+          {{ successMessage || "Gasto salvo com sucesso!" }}
         </v-alert>
 
         <v-row dense>
-          <!-- Categoria -->
           <v-col cols="12">
             <div class="d-flex align-center justify-end mb-1">
-              
               <v-btn
                 size="small"
                 variant="text"
@@ -60,74 +65,6 @@
                 Nova Categoria
               </v-btn>
             </div>
-
-            <v-chip-group
-              v-model="selectedCategory"
-              class="mb-3"
-              color="primary"
-            >
-              <v-chip
-                v-for="cat in suggestedCategories"
-                :key="cat.id"
-                :value="cat.id"
-                label
-                size="small"
-                variant="outlined"
-                class="category-chip"
-                @contextmenu.prevent="openCategoryMenu($event, cat)"
-                @click="(event) => openCategoryMenu(event as MouseEvent, cat)"
-              >
-                <v-icon start :icon="cat.icon" />
-                {{ cat.name }}
-                
-                <!-- Botões de ação visíveis -->
-                <div class="d-flex align-center ml-2 category-actions">
-                  <v-btn
-                    icon
-                    size="x-small"
-                    variant="text"
-                    color="primary"
-                    @click.stop="editCategory(cat)"
-                    class="me-1 action-btn"
-                  >
-                    <v-icon size="16">mdi-pencil</v-icon>
-                  </v-btn>
-                  <v-btn
-                    icon
-                    size="x-small"
-                    variant="text"
-                    color="error"
-                    @click.stop="deleteCategory(cat)"
-                    class="action-btn"
-                  >
-                    <v-icon size="16">mdi-delete</v-icon>
-                  </v-btn>
-                </div>
-                
-                <v-menu
-                  v-model="cat.showMenu"
-                  :activator="cat.menuActivator"
-                  location="bottom"
-                  offset-y
-                >
-                  <v-list density="compact">
-                    <v-list-item
-                      @click="editCategory(cat)"
-                      prepend-icon="mdi-pencil"
-                    >
-                      <v-list-item-title>Editar</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item
-                      @click="deleteCategory(cat)"
-                      prepend-icon="mdi-delete"
-                      color="error"
-                    >
-                      <v-list-item-title class="text-error">Excluir</v-list-item-title>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
-              </v-chip>
-            </v-chip-group>
 
             <v-combobox
               v-model="selectedCategory"
@@ -148,7 +85,6 @@
                   @contextmenu.prevent="openCategoryMenu($event, item.raw)"
                 >
                   <template #append>
-                    <!-- Botões de ação visíveis para cada item -->
                     <div class="d-flex align-center">
                       <v-btn
                         icon
@@ -170,15 +106,28 @@
                         <v-icon size="16">mdi-delete</v-icon>
                       </v-btn>
                     </div>
-                    
-                    <!-- Menu de contexto (mantido para compatibilidade) -->
-                    <v-menu v-model="item.raw.showMenu" :activator="item.raw.menuActivator" location="end" offset-x>
+
+                    <v-menu
+                      v-model="item.raw.showMenu"
+                      :activator="item.raw.menuActivator"
+                      location="end"
+                      offset-x
+                    >
                       <v-list density="compact">
-                        <v-list-item @click="editCategory(item.raw)" prepend-icon="mdi-pencil">
+                        <v-list-item
+                          @click="editCategory(item.raw)"
+                          prepend-icon="mdi-pencil"
+                        >
                           <v-list-item-title>Editar</v-list-item-title>
                         </v-list-item>
-                        <v-list-item @click="deleteCategory(item.raw)" prepend-icon="mdi-delete" color="error">
-                          <v-list-item-title class="text-error">Excluir</v-list-item-title>
+                        <v-list-item
+                          @click="deleteCategory(item.raw)"
+                          prepend-icon="mdi-delete"
+                          color="error"
+                        >
+                          <v-list-item-title class="text-error"
+                            >Excluir</v-list-item-title
+                          >
                         </v-list-item>
                       </v-list>
                     </v-menu>
@@ -188,7 +137,6 @@
             </v-combobox>
           </v-col>
 
-          <!-- Valor e Data -->
           <v-col cols="12" md="6">
             <v-text-field
               v-model="formattedValue"
@@ -213,8 +161,7 @@
             />
           </v-col>
 
-          <!-- Descrição -->
-          <!-- <v-col cols="12">
+          <v-col cols="12">
             <v-text-field
               v-model="description"
               label="Descrição (Opcional)"
@@ -222,9 +169,8 @@
               variant="outlined"
               density="compact"
             />
-          </v-col> -->
+          </v-col>
 
-          <!-- Pagamento -->
           <v-col cols="12" md="6">
             <v-select
               v-model="selectedPaymentMethod"
@@ -304,7 +250,7 @@
               class="submit-btn"
               :loading="isSavingExpense"
               size="large"
-              rounded="lg"
+              rounded="md"
               variant="flat"
             >
               <v-icon start>{{ submitButtonIcon }}</v-icon>
@@ -314,16 +260,28 @@
         </v-row>
       </v-form>
     </v-card-text>
-
-    <!-- Modal para criar nova categoria -->
     <v-dialog v-model="showCategoryDialog" max-width="500" persistent>
       <v-card>
-        <v-card-title class="text-h6 d-flex align-start bg-primary-gradient"
-    >
-          <v-icon class="me-3" size="24">mdi-tag-plus</v-icon>
-          Nova Categoria
+        <v-card-title
+          class="text-h6 d-flex align-center justify-space-between"
+          :style="{ background: `rgb(var(--v-theme-primary))` }"
+        >
+          <div class="d-flex align-center">
+            <v-icon class="me-3" size="24">mdi-tag-plus</v-icon>
+            Nova Categoria
+          </div>
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            aria-label="Fechar"
+            @click="closeCategoryDialog"
+            color="white"
+          >
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
         </v-card-title>
-        
+
         <v-card-text>
           <v-form ref="categoryForm" @submit.prevent="createCategory">
             <v-row dense>
@@ -338,7 +296,7 @@
                   placeholder="Ex: Alimentação"
                 />
               </v-col>
-              
+
               <v-col cols="12">
                 <v-select
                   v-model="newCategory.icon"
@@ -362,7 +320,7 @@
             </v-row>
           </v-form>
         </v-card-text>
-        
+
         <v-card-actions class="pa-4">
           <v-spacer />
           <v-btn
@@ -391,7 +349,7 @@
           <v-icon class="me-3" size="24">mdi-pencil</v-icon>
           Editar Categoria
         </v-card-title>
-        
+
         <v-card-text>
           <v-form ref="editCategoryForm" @submit.prevent="updateCategory">
             <v-row dense>
@@ -406,7 +364,7 @@
                   placeholder="Ex: Alimentação"
                 />
               </v-col>
-              
+
               <v-col cols="12">
                 <v-select
                   v-model="editingCategory.icon"
@@ -430,7 +388,7 @@
             </v-row>
           </v-form>
         </v-card-text>
-        
+
         <v-card-actions class="pa-4">
           <v-spacer />
           <v-btn
@@ -459,16 +417,17 @@
           <v-icon class="me-3" size="24" color="error">mdi-delete</v-icon>
           Excluir Categoria
         </v-card-title>
-        
+
         <v-card-text>
           <p class="mb-2">
-            Tem certeza que deseja excluir a categoria <strong>"{{ deletingCategory?.name }}"</strong>?
+            Tem certeza que deseja excluir a categoria
+            <strong>"{{ deletingCategory?.name }}"</strong>?
           </p>
           <p class="text-caption text-medium-emphasis">
             Esta ação não pode ser desfeita e pode afetar gastos existentes.
           </p>
         </v-card-text>
-        
+
         <v-card-actions class="pa-4">
           <v-spacer />
           <v-btn
@@ -493,15 +452,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import { parseISO, format, addMonths } from "date-fns";
+import { parseISO, format, addMonths, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useExpensesStore } from "~/stores/useExpensesStore";
 import { useCategoriesStore } from "~/stores/useCategoriesStore";
-import type { CreateExpensePayload } from "~/types/expense";
 import type { Category } from "~/types/category";
 import DatePickerField from "~/components/ui/DatePickerField.vue";
 
-// Tipo estendido para categorias com menu
 interface CategoryWithMenu extends Category {
   showMenu: boolean;
   menuActivator: any;
@@ -513,18 +470,27 @@ const emit = defineEmits<{
 
 const expensesStore = useExpensesStore();
 const categoriesStore = useCategoriesStore();
-
 const isCardVisible = ref(true);
 const expenseForm = ref<any>(null);
 const categoryForm = ref<any>(null);
 const editCategoryForm = ref<any>(null);
-
 const rawTotalValue = ref(0);
 const formattedValue = ref("");
 const selectedPaymentMethod = ref("Cartão de Crédito");
 const numberOfInstallments = ref(1);
 const selectedCategory = ref<string | CategoryWithMenu | null>(null);
-const selectedExpenseDate = ref(new Date().toISOString().split("T")[0]);
+function getDefaultDate(): Date {
+  const today = new Date();
+  const storeMonth = expensesStore.currentDate;
+
+  if (isSameMonth(today, storeMonth)) {
+    return today;
+  } else {
+    return storeMonth;
+  }
+}
+
+const selectedExpenseDate = ref(format(getDefaultDate(), "yyyy-MM-dd"));
 const selectedCard = ref("");
 const description = ref("");
 const isSavingExpense = ref(false);
@@ -532,24 +498,21 @@ const submissionState = ref<"idle" | "success" | "error">("idle");
 const errorMessage = ref("");
 const successMessage = ref("");
 
-// Categoria
 const showCategoryDialog = ref(false);
 const isCreatingCategory = ref(false);
 const newCategory = ref({
   name: "",
-  icon: ""
+  icon: "",
 });
 
-// Editar categoria
 const showEditCategoryDialog = ref(false);
 const isUpdatingCategory = ref(false);
 const editingCategory = ref({
   id: "",
   name: "",
-  icon: ""
+  icon: "",
 });
 
-// Excluir categoria
 const showDeleteCategoryDialog = ref(false);
 const isDeletingCategory = ref(false);
 const deletingCategory = ref<Category | null>(null);
@@ -585,9 +548,8 @@ const availableIcons = [
   "mdi-heart",
   "mdi-star",
   "mdi-diamond",
-  "mdi-crown"
+  "mdi-crown",
 ];
-
 const paymentMethods = [
   "Cartão de Crédito",
   "Débito",
@@ -596,24 +558,17 @@ const paymentMethods = [
   "Boleto",
 ];
 const cardOptions = ["Nubank", "Hipercard", "Santander", "Outro"];
-
 const categoryItems = computed(() =>
-  categoriesStore.categories.map((cat: Category): CategoryWithMenu => ({
-    id: cat.id,
-    name: cat.name,
-    icon: cat.icon,
-    showMenu: false,
-    menuActivator: null
-  }))
+  categoriesStore.categories.map(
+    (cat: Category): CategoryWithMenu => ({
+      id: cat.id,
+      name: cat.name,
+      icon: cat.icon,
+      showMenu: false,
+      menuActivator: null,
+    })
+  )
 );
-
-const suggestedCategories = computed(() => {
-  const commonCategories = ["ALIMENTAÇÃO", "TRANSPORTE", "CONTAS", "LAZER"];
-  return categoryItems.value
-    .filter((cat) => commonCategories.includes(cat.name))
-    .slice(0, 4);
-});
-
 const isCreditCardPayment = computed(
   () => selectedPaymentMethod.value === "Cartão de Crédito"
 );
@@ -628,8 +583,6 @@ const formattedInstallmentValue = computed(() =>
 const formattedExpenseDate = computed(() =>
   format(parseISO(selectedExpenseDate.value), "MMM/yy", { locale: ptBR })
 );
-
-// Regras de validação
 const categoryRules = [(v: any) => !!v || "Escolha uma categoria"];
 const paymentMethodRules = [
   (v: any) => !!v || "Escolha um método de pagamento",
@@ -642,27 +595,18 @@ const totalValueRules = [
     parseFloat(v?.replace(/\./g, "").replace(",", ".") || "0") > 0 ||
     "O valor deve ser maior que zero",
 ];
-
-// Regras para categoria
 const categoryNameRules = [
   (v: string) => !!v || "Nome da categoria é obrigatório",
   (v: string) => v.length >= 2 || "Nome deve ter pelo menos 2 caracteres",
-  (v: string) => v.length <= 50 || "Nome deve ter no máximo 50 caracteres"
+  (v: string) => v.length <= 50 || "Nome deve ter no máximo 50 caracteres",
 ];
-
-const categoryIconRules = [
-  (v: string) => !!v || "Ícone é obrigatório"
-];
-
-// Watchers
+const categoryIconRules = [(v: string) => !!v || "Ícone é obrigatório"];
 watch(selectedPaymentMethod, (newMethod) => {
   if (newMethod !== "Cartão de Crédito") {
     numberOfInstallments.value = 1;
     selectedCard.value = "";
   }
 });
-
-// Utilitários
 const formatCurrencyInput = (value: string) => {
   let digits = (value || "").replace(/\D/g, "").replace(/^0+/, "");
   if (!digits) {
@@ -676,118 +620,92 @@ const formatCurrencyInput = (value: string) => {
     maximumFractionDigits: 2,
   });
 };
-
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
     value || 0
   );
-
 const resetForm = () => {
   rawTotalValue.value = 0;
   formattedValue.value = "";
   selectedPaymentMethod.value = "Cartão de Crédito";
   numberOfInstallments.value = 1;
   selectedCategory.value = null;
-  selectedExpenseDate.value = new Date().toISOString().split("T")[0];
+  selectedExpenseDate.value = format(getDefaultDate(), "yyyy-MM-dd"); // MUDANÇA
   selectedCard.value = "";
   description.value = "";
   expenseForm.value?.resetValidation?.();
 };
-
 const resetCategoryForm = () => {
   newCategory.value = {
     name: "",
-    icon: ""
+    icon: "",
   };
   categoryForm.value?.resetValidation?.();
 };
-
 const resetEditCategoryForm = () => {
   editingCategory.value = {
     id: "",
     name: "",
-    icon: ""
+    icon: "",
   };
   editCategoryForm.value?.resetValidation?.();
 };
-
 const closeDialog = () => {
   isCardVisible.value = false;
   resetForm();
 };
-
 const closeCard = () => {
-  resetForm(); // opcional, se quiser limpar o formulário
-  emit("close"); // envia evento para o pai fechar o v-dialog
+  resetForm();
+  emit("close");
 };
-
-// Menu de contexto para categorias
 const openCategoryMenu = (event: MouseEvent, category: CategoryWithMenu) => {
-  console.log('Opening category menu for:', category);
   event.preventDefault();
   category.showMenu = true;
   category.menuActivator = event.currentTarget;
 };
-
-// Editar categoria
 const editCategory = (category: CategoryWithMenu) => {
-  console.log('Editing category:', category);
   editingCategory.value = {
     id: category.id,
     name: category.name,
-    icon: category.icon
+    icon: category.icon,
   };
   showEditCategoryDialog.value = true;
   category.showMenu = false;
-  
-  // Fechar o combobox se estiver aberto
   if (selectedCategory.value === category.id) {
-    // Pequeno delay para permitir que o modal abra primeiro
     setTimeout(() => {
       selectedCategory.value = category.id;
     }, 100);
   }
 };
-
-// Atualizar categoria
 async function updateCategory() {
-  console.log('Updating category:', editingCategory.value);
   const { valid } = await editCategoryForm.value.validate();
   if (!valid) return;
-
   isUpdatingCategory.value = true;
-
   try {
     const categoryPayload = {
       name: editingCategory.value.name.toUpperCase(),
-      icon: editingCategory.value.icon
+      icon: editingCategory.value.icon,
     };
-
-    console.log('Sending update payload:', categoryPayload);
-    await categoriesStore.updateCategory(editingCategory.value.id, categoryPayload);
-    
-    // Fechar modal e limpar formulário
+    await categoriesStore.updateCategory(
+      editingCategory.value.id,
+      categoryPayload
+    );
     showEditCategoryDialog.value = false;
     resetEditCategoryForm();
-    
-    // Se a categoria editada era a selecionada, atualizar a seleção
     if (selectedCategory.value === editingCategory.value.id) {
       const updatedCategory = categoriesStore.categories.find(
-        cat => cat.id === editingCategory.value.id
+        (cat) => cat.id === editingCategory.value.id
       );
       if (updatedCategory) {
         selectedCategory.value = updatedCategory.id;
       }
     }
-    
-    // Mostrar mensagem de sucesso
     successMessage.value = "Categoria atualizada com sucesso!";
     submissionState.value = "success";
     setTimeout(() => {
       submissionState.value = "idle";
       successMessage.value = "";
     }, 2000);
-    
   } catch (error) {
     console.error("Erro ao atualizar categoria:", error);
     errorMessage.value = "Erro ao atualizar categoria. Tente novamente.";
@@ -800,53 +718,33 @@ async function updateCategory() {
     isUpdatingCategory.value = false;
   }
 }
-
-// Excluir categoria
 const deleteCategory = (category: CategoryWithMenu) => {
-  console.log('Deleting category:', category);
   deletingCategory.value = category;
   showDeleteCategoryDialog.value = true;
   category.showMenu = false;
-  
-  // Fechar o combobox se estiver aberto
   if (selectedCategory.value === category.id) {
-    // Pequeno delay para permitir que o modal abra primeiro
     setTimeout(() => {
       selectedCategory.value = category.id;
     }, 100);
   }
 };
-
-// Confirmar exclusão
 async function confirmDeleteCategory() {
   if (!deletingCategory.value) return;
-
-  console.log('Confirming deletion of category:', deletingCategory.value);
   isDeletingCategory.value = true;
-
   try {
     await categoriesStore.deleteCategory(deletingCategory.value.id);
-    
-    // Salvar o ID antes de limpar
     const deletedCategoryId = deletingCategory.value?.id;
-    
-    // Fechar modal
     showDeleteCategoryDialog.value = false;
     deletingCategory.value = null;
-    
-    // Se a categoria excluída era a selecionada, limpar a seleção
     if (deletedCategoryId && selectedCategory.value === deletedCategoryId) {
       selectedCategory.value = null;
     }
-    
-    // Mostrar mensagem de sucesso
     successMessage.value = "Categoria excluída com sucesso!";
     submissionState.value = "success";
     setTimeout(() => {
       submissionState.value = "idle";
       successMessage.value = "";
     }, 2000);
-    
   } catch (error) {
     console.error("Erro ao excluir categoria:", error);
     errorMessage.value = "Erro ao excluir categoria. Tente novamente.";
@@ -859,44 +757,30 @@ async function confirmDeleteCategory() {
     isDeletingCategory.value = false;
   }
 }
-
-// Criar categoria
 async function createCategory() {
-  console.log('Creating category:', newCategory.value);
   const { valid } = await categoryForm.value.validate();
   if (!valid) return;
-
   isCreatingCategory.value = true;
-
   try {
     const categoryPayload = {
       name: newCategory.value.name.toUpperCase(),
-      icon: newCategory.value.icon
+      icon: newCategory.value.icon,
     };
-
-    console.log('Sending create payload:', categoryPayload);
     await categoriesStore.createCategory(categoryPayload);
-    
-    // Fechar modal e limpar formulário
     showCategoryDialog.value = false;
     resetCategoryForm();
-    
-    // Selecionar automaticamente a nova categoria criada
     const newCategoryCreated = categoriesStore.categories.find(
-      cat => cat.name === categoryPayload.name
+      (cat) => cat.name === categoryPayload.name
     );
     if (newCategoryCreated) {
       selectedCategory.value = newCategoryCreated.id;
     }
-    
-    // Mostrar mensagem de sucesso
     successMessage.value = "Categoria criada com sucesso!";
     submissionState.value = "success";
     setTimeout(() => {
       submissionState.value = "idle";
       successMessage.value = "";
     }, 2000);
-    
   } catch (error) {
     console.error("Erro ao criar categoria:", error);
     errorMessage.value = "Erro ao criar categoria. Tente novamente.";
@@ -909,15 +793,11 @@ async function createCategory() {
     isCreatingCategory.value = false;
   }
 }
-
-// Submit
 async function submitExpense() {
   const { valid } = await expenseForm.value.validate();
   if (!valid) return;
-
   isSavingExpense.value = true;
   submissionState.value = "idle";
-
   try {
     const total = rawTotalValue.value;
     const installmentsCount = isCreditCardPayment.value
@@ -925,21 +805,23 @@ async function submitExpense() {
       : 1;
     const initialDate = parseISO(selectedExpenseDate.value);
     const expensePromises: Promise<any>[] = [];
-
     for (let i = 0; i < installmentsCount; i++) {
       const currentDate = addMonths(initialDate, i);
       let categoryId: string;
-      if (typeof selectedCategory.value === 'object' && selectedCategory.value?.id) {
+      if (
+        typeof selectedCategory.value === "object" &&
+        selectedCategory.value?.id
+      ) {
         categoryId = selectedCategory.value.id;
-      } else if (typeof selectedCategory.value === 'string') {
+      } else if (typeof selectedCategory.value === "string") {
         categoryId = selectedCategory.value;
       } else {
-        throw new Error('Category ID is required');
+        throw new Error("Category ID is required");
       }
-        
       const payload = {
         CategoryId: categoryId,
         Value: total / installmentsCount,
+        description: description.value || "",
         PaymentMethod: selectedPaymentMethod.value,
         Card: isCreditCardPayment.value ? selectedCard.value : null,
         Installments: installmentsCount,
@@ -947,7 +829,6 @@ async function submitExpense() {
       };
       expensePromises.push(expensesStore.addExpense(payload));
     }
-
     await Promise.all(expensePromises);
     successMessage.value = "Gasto salvo com sucesso!";
     submissionState.value = "success";
@@ -969,8 +850,6 @@ async function submitExpense() {
     isSavingExpense.value = false;
   }
 }
-
-// Botão de submit
 const submitButtonColor = computed(() =>
   submissionState.value === "success"
     ? "success"
@@ -992,55 +871,12 @@ const submitButtonText = computed(() =>
     ? "Erro!"
     : "Salvar Gasto"
 );
-
+const closeCategoryDialog = () => {
+  showCategoryDialog.value = false;
+  resetCategoryForm();
+};
 onMounted(() => {
   categoriesStore.fetchAllCategories();
 });
 </script>
-
-<style scoped>
-.bg-primary-gradient {
-  background: linear-gradient(
-    to right,
-    rgb(var(--v-theme-primary)),
-    rgba(var(--v-theme-primary), 0.7)
-  );
-  color: white;
-}
-.submit-btn {
-  min-width: 160px;
-  transition: all 0.3s ease-in-out;
-}
-
-.category-chip {
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.category-chip:hover {
-  transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.category-actions {
-  opacity: 0.7;
-  transition: opacity 0.2s ease;
-}
-
-.category-chip:hover .category-actions {
-  opacity: 1;
-}
-
-.action-btn {
-  transition: all 0.2s ease;
-}
-
-.action-btn:hover {
-  transform: scale(1.1);
-}
-
-.action-btn:active {
-  transform: scale(0.95);
-}
-</style>
+<style scoped></style>

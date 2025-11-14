@@ -1,21 +1,5 @@
 <template>
-  <v-container fluid class="pa-4">
-    <v-card class="mb-6 pa-4 rounded-xl elevation-3" height="auto">
-      <v-row justify="center" align="center">
-        <v-col cols="12" md="6" class="text-center">
-          <v-row class="justify-center align-center mb-2">
-            <v-icon color="primary" size="30" class="me-2">
-              mdi-finance
-            </v-icon>
-            <h2 class="text-h5 font-weight-medium mb-0">Painel Financeiro</h2>
-          </v-row>
-          <p class="text-body-2">
-            Organize seus gastos e mantenha suas finanças sob controle.
-          </p>
-        </v-col>
-      </v-row>
-    </v-card>
-
+  <v-container fluid class="pa-4" style="max-width: 1600px">
     <div v-if="isLoading">
       <v-skeleton-loader type="image" height="110" class="mb-6" />
       <v-skeleton-loader type="list-item-avatar-two-line@5" />
@@ -23,15 +7,15 @@
 
     <v-slide-y-transition group appear v-else>
       <v-row>
-        <v-col cols="12" md="4">
+        <v-col cols="12" md="5">
           <section class="mb-6">
             <ExpenseSummary />
-            <v-row class="mb-4" justify="center" align="center">
+            <v-row class="mt-4" justify="center" align="center">
               <v-col cols="auto">
                 <v-btn
                   color="primary"
-                  large
-                  rounded="pill"
+                  size="large"
+                  rounded="lg"
                   elevation="6"
                   prepend-icon="mdi-plus-circle-outline"
                   @click="isRegisterDialogOpen = true"
@@ -44,23 +28,11 @@
           <ExpenseList />
         </v-col>
 
-        <v-col cols="12" md="8">
+        <v-col cols="12" md="7">
           <ExpenseDashboard />
         </v-col>
       </v-row>
     </v-slide-y-transition>
-
-    <v-btn
-      v-if="$vuetify.display.smAndDown"
-      icon="mdi-plus"
-      color="primary"
-      fixed
-      bottom
-      right
-      large
-      class="ma-4 elevation-8"
-      @click="isRegisterDialogOpen = true"
-    />
 
     <v-dialog v-model="isRegisterDialogOpen" max-width="700" scrollable>
       <ExpenseRegisterCard
@@ -74,7 +46,7 @@
       :color="snackbar.color"
       timeout="3000"
       location="top right"
-      rounded="pill"
+      rounded="md"
     >
       <v-icon start>{{ snackbar.icon }}</v-icon>
       {{ snackbar.message }}
@@ -120,51 +92,30 @@ function showSnackbar(
 function handleExpenseSaved() {
   isRegisterDialogOpen.value = false;
   showSnackbar("Gasto registrado com sucesso!");
+  refreshData();
 }
 
-async function loadData() {
-  const isMockUser = authStore.token === "mock_token_123";
-
-  if (isMockUser) {
-    console.log("Modo de teste ativado. Usando dados mocados.");
-
-    const mockCategories = [
-      { id: "1", name: "Alimentação", icon: "mdi-food" },
-      { id: "2", name: "Transporte", icon: "mdi-train" },
-      { id: "3", name: "Casa", icon: "mdi-home" },
-    ];
-
-    const mockExpenses = [
-      { id: "exp1", description: "Mercado", amount: 150.75, categoryId: "1", date: "2023-01-05T10:00:00Z" },
-      { id: "exp2", description: "Ônibus", amount: 4.50, categoryId: "2", date: "2023-01-06T11:00:00Z" },
-      { id: "exp3", description: "Luz", amount: 85.00, categoryId: "3", date: "2023-01-07T12:00:00Z" },
-    ];
-
-    const mockSalary = { amount: 5000.00 };
-
-    categoriesStore.$patch({ categories: mockCategories });
-    expensesStore.$patch({ expenses: mockExpenses, salary: mockSalary });
-
+async function refreshData() {
+  isLoading.value = true;
+  try {
+    await Promise.all([
+      categoriesStore.fetchAllCategories(),
+      expensesStore.fetchExpenses(),
+      expensesStore.fetchSalary(),
+    ]);
+  } catch (error) {
+    console.error("Erro ao carregar dados:", error);
+    showSnackbar("Falha ao carregar dados.", "error", "mdi-alert-circle");
+  } finally {
     isLoading.value = false;
-  } else {
-    // Lógica de carregamento real da API
-    try {
-      await Promise.all([
-        categoriesStore.fetchAllCategories(),
-        expensesStore.fetchExpenses(),
-        expensesStore.fetchSalary(),
-      ]);
-    } catch (error) {
-      console.error("Erro ao carregar dados:", error);
-      showSnackbar("Falha ao carregar dados.", "error", "mdi-alert-circle");
-    } finally {
-      isLoading.value = false;
-    }
   }
 }
 
-// Garante que o carregamento de dados ocorra apenas quando o componente estiver montado
-onMounted(async () => {
-  await loadData();
+const dashboardLabel = computed(() => {
+  if (authStore.isPersonalDashboard) return "Pessoal";
+  if (authStore.isLinked) return "Compartilhado";
+  return null;
 });
+
+onMounted(refreshData);
 </script>
