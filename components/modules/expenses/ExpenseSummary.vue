@@ -1,61 +1,61 @@
 <template>
-  <v-sheet class="mb-4 pa-2 rounded-md" color="transparent">
-    <v-row no-gutters>
-      <!-- Salário -->
-      <v-col cols="12" sm="4" class="pa-1">
-        <ExpenseCard
-          icon="mdi-wallet"
-          title="Salário"
-          :value="store.salary"
-          color="success"
-          :max-value="store.salary * 1.5"
-          edit-icon="mdi-pencil"
-          edit-title="Editar salário"
-          @edit-click="openDialog"
-        />
-      </v-col>
-      
-      <!-- Total do Mês -->
-      <v-col cols="12" sm="4" class="pa-1">
-        <ExpenseCard
-          icon="mdi-cash-multiple"
-          title="Débito"
-          :value="store.currentMonthExpenses"
-          color="error"
-          :max-value="store.salary || 1"
-          :custom-class="getExpenseCardClass('debito')"
-        />
-      </v-col>
-      
-      <!-- Saldo -->
-      <v-col cols="12" sm="4" class="pa-1">
-        <ExpenseCard
-          icon="mdi-cash-check"
-          title="Saldo"
-          :value="restante"
-          color="warning"
-          :max-value="Math.max(Math.abs(store.salary), Math.abs(restante) * 1.5, 1)"
-          :custom-class="getExpenseCardClass('saldo')"
-        />
-      </v-col>
-    </v-row>
-  </v-sheet>
+ <v-sheet class="mb-4 mt-1 pa-2 rounded-md" color="transparent">
+  <v-row no-gutters>
+   <v-col cols="12" sm="4" class="pa-1">
+    <ExpenseCard
+     icon="mdi-wallet"
+     title="Salário"
+     :value="currentSalary"
+     color="success"
+     :max-value="currentSalary * 1.5"
+     edit-icon="mdi-pencil"
+     edit-title="Editar salário"
+     @edit-click="openDialog"
+    />
+   </v-col>
 
-  <EditNumberDialog
-    v-model="dialog"
-    :value="store.salary"
-    :expense="null"
-    title="Editar Salário"
-    label="Novo salário"
-    :min="0"
-    suffix="R$"
-    confirm-color="warning"
-    @update:value="updateSalary"
-  />
+   <v-col cols="12" sm="4" class="pa-1">
+    <ExpenseCard
+     icon="mdi-cash-multiple"
+     title="Débito"
+     :value="currentMonthTotal"
+     color="error"
+     :max-value="currentSalary || 1"
+     :custom-class="getExpenseCardClass('debito')"
+    />
+   </v-col>
+
+   <v-col cols="12" sm="4" class="pa-1">
+    <ExpenseCard
+     icon="mdi-cash-check"
+     title="Saldo"
+     :value="restante"
+     color="warning"
+     :max-value="
+      Math.max(Math.abs(currentSalary), Math.abs(restante) * 1.5, 1)
+     "
+     :custom-class="getExpenseCardClass('saldo')"
+    />
+   </v-col>
+  </v-row>
+ </v-sheet>
+
+ <EditNumberDialog
+  v-model="dialog"
+  :value="currentSalary"
+  :expense="null"
+  title="Editar Salário"
+  label="Novo salário"
+  :min="0"
+  suffix="R$"
+  confirm-color="warning"
+  @update:value="updateSalary"
+ />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { storeToRefs } from "pinia";
 import { useExpensesStore } from "~/stores/useExpensesStore";
 import ExpenseCard from "./ExpenseCard.vue";
 import EditNumberDialog from "~/components/dialogs/EditNumberDialog.vue";
@@ -63,54 +63,69 @@ import EditNumberDialog from "~/components/dialogs/EditNumberDialog.vue";
 const store = useExpensesStore();
 const dialog = ref(false);
 
-const restante = computed(() => store.salary - store.currentMonthExpenses);
+const { expenses, currentMonthKey } = storeToRefs(store);
+
+const currentSalary = computed(() => store.salaryForSelectedMonth);
+
+const currentMonthTotal = computed(() => {
+ return expenses.value
+  .filter((exp) => exp.date && exp.date.startsWith(currentMonthKey.value))
+  .reduce((total, exp) => total + exp.value, 0);
+});
+
+const restante = computed(() => currentSalary.value - currentMonthTotal.value);
 
 function openDialog() {
-  dialog.value = true;
+ dialog.value = true;
 }
 
 function updateSalary(newValue: number) {
-  if (newValue >= 0) {
-    store.setSalary(newValue);
-  }
-  dialog.value = false;
+ if (newValue >= 0) {
+  store.setSalary(newValue);
+ }
+ dialog.value = false;
 }
 
 function getExpenseCardClass(type: string) {
-  const classes = [];
-  
-  if (type === 'saldo') {
-    if (restante.value >= 0) {
-      classes.push('bg-success-lighten-5');
-    } else {
-      classes.push('bg-error-lighten-5');
-    }
-  } else if (type === 'debito') {
-    classes.push('bg-error-lighten-5');
+ const classes = [];
+
+ if (type === "saldo") {
+  if (restante.value >= 0) {
+   classes.push("bg-success-lighten-5");
+  } else {
+   classes.push("bg-error-lighten-5");
   }
-  
-  return classes.join(' ');
+ } else if (type === "debito") {
+  classes.push("bg-error-lighten-5");
+ }
+
+ return classes.join(" ");
 }
 
-// Carrega os dados iniciais
 onMounted(() => {
-  store.fetchSalary();
-  store.fetchExpenses();
+ store.fetchSalary();
+ store.fetchExpenses();
 });
 </script>
 
 <style scoped>
 /* Animações */
 @keyframes subtlePulse {
-  0% { box-shadow: 0 0 0 0 rgba(var(--v-theme-error), 0.2); }
-  70% { box-shadow: 0 0 0 6px rgba(var(--v-theme-error), 0); }
-  100% { box-shadow: 0 0 0 0 rgba(var(--v-theme-error), 0); }
+ 0% {
+  box-shadow: 0 0 0 0 rgba(var(--v-theme-error), 0.2);
+ }
+ 70% {
+  box-shadow: 0 0 0 6px rgba(var(--v-theme-error), 0);
+ }
+ 100% {
+  box-shadow: 0 0 0 0 rgba(var(--v-theme-error), 0);
+ }
 }
 
 /* Melhorias de responsividade */
 @media (max-width: 960px) {
-  :deep(.v-card) {
-    margin-bottom: 8px;
-  }
+ :deep(.v-card) {
+  margin-bottom: 8px;
+ }
 }
 </style>

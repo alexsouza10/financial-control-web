@@ -1,191 +1,197 @@
 <template>
-  <v-app-bar app flat color="primary" height="64" elevate-on-scroll>
-    <v-app-bar-nav-icon
-      v-if="isMobile"
-      @click="toggleMobileMenu"
-      aria-label="Abrir menu"
-    >
-      <v-icon>mdi-menu</v-icon>
-    </v-app-bar-nav-icon>
-
-    <!-- Logo / Título -->
+  <v-app-bar
+    app
+    flat
+    height="64"
+    color="primary"
+    elevate-on-scroll
+    class="px-3"
+    style="backdrop-filter: blur(14px) saturate(180%)"
+  >
     <v-toolbar-title
       class="d-flex align-center cursor-pointer"
       @click="goHome"
-      role="button"
-      tabindex="0"
-      @keydown.enter="goHome"
-      @keydown.space.prevent="goHome"
+      style="letter-spacing: -0.5px"
     >
-      <v-icon class="me-2" size="28">mdi-cash-multiple</v-icon>
-      <span class="font-weight-bold text-truncate"> Gestão de Gastos </span>
+      <v-avatar color="white" size="32" class="mr-3 elevation-2">
+        <v-icon color="primary" size="20">mdi-wallet-outline</v-icon>
+      </v-avatar>
+
+      <!-- Desktop -->
+      <span
+        v-if="isDesktop"
+        class="font-weight-bold text-h6"
+        style="opacity: 0.95"
+      >
+        Gestão Fácil
+      </span>
+
+      <!-- Mobile -->
+      <span
+        v-else
+        class="font-weight-bold text-subtitle-1"
+        style="opacity: 0.95"
+      >
+        {{
+          !authStore.isLinked
+            ? "Dashboard Pessoal"
+            : authStore.mainDashboardTitle
+        }}
+      </span>
     </v-toolbar-title>
 
     <v-spacer />
 
-    <!-- Links desktop -->
-    <template v-if="isDesktop">
+    <v-chip
+      v-if="isDesktop && authStore.isAuthenticated && authStore.isLinked"
+      :color="
+        authStore.isPersonalDashboard ? 'teal-lighten-4' : 'blue-grey-lighten-4'
+      "
+      size="small"
+      class="px-4 mr-3"
+      variant="flat"
+      style="border-radius: 10px; font-weight: 600"
+    >
+      <v-icon
+        start
+        size="18"
+        :icon="
+          authStore.isPersonalDashboard ? 'mdi-account' : 'mdi-account-group'
+        "
+      />
+      {{ authStore.dashboardStatus }}
+    </v-chip>
+
+    <div v-if="isDesktop" class="d-flex align-center">
       <v-btn
         v-for="item in navItems"
         :key="item.route"
         :to="{ name: item.route }"
         variant="text"
-        :class="{ 'v-btn--active': isRoute(item.route) }"
-        min-width="auto"
+        class="mx-1 px-3 nav-btn"
+        :class="{ 'active-nav': isRoute(item.route) }"
       >
-        <v-icon left>{{ item.icon }}</v-icon>
-        <span>{{ item.title }}</span>
+        <v-icon class="mr-1" size="20">{{ item.icon }}</v-icon>
+        {{ item.title }}
       </v-btn>
-    </template>
 
-    <!-- Notificações -->
-    <v-menu offset-y min-width="350" :close-on-content-click="false">
-      <template #activator="{ props: menuProps }">
+      <v-btn
+        v-if="authStore.isAdmin"
+        :to="{ name: 'admin-users' }"
+        variant="text"
+        class="mx-1 px-3 nav-btn"
+        :class="{ 'active-nav': $route.path.startsWith('/admin') }"
+      >
+        <v-icon class="mr-1" size="20">mdi-shield-account</v-icon>
+        Admin
+      </v-btn>
+    </div>
+
+    <v-tooltip :text="isDark ? 'Modo claro' : 'Modo escuro'">
+      <template #activator="{ props }">
         <v-btn
-          v-bind="menuProps"
+          v-bind="props"
           icon
-          :aria-label="`${unreadNotifications || 'Nenhuma'} notificação(s)`"
+          size="small"
+          class="mx-1"
+          @click="toggleTheme"
         >
-          <v-badge
-            v-if="unreadNotifications"
-            :content="unreadNotifications"
-            color="error"
-            bordered
-            :dot="isXs"
-          >
-            <v-icon>{{
-              unreadNotifications ? "mdi-bell-ring" : "mdi-bell-outline"
-            }}</v-icon>
-          </v-badge>
-          <v-icon v-else>mdi-bell-outline</v-icon>
-        </v-btn>
-      </template>
-
-      <!-- Conteúdo do menu de notificações -->
-      <v-card elevation="4" max-height="80vh" style="overflow-y:auto">
-        <v-card-title class="d-flex justify-space-between align-center">
-          <span class="text-h6">Notificações</span>
-          <v-btn
-            v-if="unreadNotifications"
-            variant="text"
-            size="small"
-            color="primary"
-            @click="markAllAsRead"
-          >
-            Marcar todas como lidas
-          </v-btn>
-        </v-card-title>
-        <v-divider />
-        <v-card-text class="pa-0">
-          <v-list v-if="notifications.length" density="compact">
-            <v-list-item
-              v-for="n in notifications"
-              :key="n.id"
-              :color="!n.read ? 'primary lighten-5' : ''"
-              @click="handleNotificationClick(n)"
-            >
-              <v-list-item-icon>
-                <v-icon>{{ n.icon || "mdi-information" }}</v-icon>
-              </v-list-item-icon>
-              <v-list-item-content>
-                <v-list-item-title>{{ n.title }}</v-list-item-title>
-                <v-list-item-subtitle>{{ n.message }}</v-list-item-subtitle>
-              </v-list-item-content>
-              <v-list-item-action>
-                <v-btn icon size="x-small" @click.stop="markAsRead(n.id)">
-                  <v-icon size="18">mdi-check</v-icon>
-                </v-btn>
-              </v-list-item-action>
-            </v-list-item>
-          </v-list>
-          <v-alert v-else type="info" variant="tonal" class="ma-4">
-            Nenhuma notificação nova
-          </v-alert>
-        </v-card-text>
-        <v-divider />
-        <v-card-actions>
-          <v-btn
-            variant="text"
-            color="primary"
-            block
-            @click="$router.push('/notifications')"
-          >
-            Ver todas as notificações
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-menu>
-
-    <!-- Toggle tema -->
-    <v-tooltip :text="isDark ? 'Tema claro' : 'Tema escuro'">
-      <template #activator="{ props: tooltipProps }">
-        <v-btn v-bind="tooltipProps" icon @click="toggleTheme">
-          <v-icon size="24">{{
-            isDark ? "mdi-weather-sunny" : "mdi-weather-night"
-          }}</v-icon>
+          <v-icon size="24">
+            {{ isDark ? "mdi-weather-sunny" : "mdi-weather-night" }}
+          </v-icon>
         </v-btn>
       </template>
     </v-tooltip>
 
-    <!-- Menu do usuário -->
-    <v-menu v-model="userMenu" location="bottom end" min-width="200">
-      <template #activator="{ props: menuProps }">
-        <v-btn v-bind="menuProps" variant="text" aria-label="Menu do usuário">
-          <v-avatar size="36" color="primary">
-            <v-icon size="20">mdi-account-circle</v-icon>
+    <v-menu v-model="userMenu" location="bottom end" offset="8">
+      <template #activator="{ props }">
+        <v-btn v-bind="props" icon elevation="0" size="small">
+          <v-avatar size="36" color="white" class="elevation-3 user-avatar">
+            <span class="text-primary">{{ userInitial }}</span>
           </v-avatar>
         </v-btn>
       </template>
-      <v-card min-width="200" elevation="4">
-        <v-list density="compact" role="menu">
+
+      <v-card elevation="10" class="py-2">
+        <v-list density="comfortable">
           <v-list-item
             v-for="item in userMenuItems"
             :key="item.title"
             @click="handleUserMenuItemClick(item.action)"
             :class="{ 'text-error': item.isDanger }"
-            role="menuitem"
           >
-            <v-list-item-icon
-              ><v-icon>{{ item.icon }}</v-icon></v-list-item-icon
-            >
+            <template #prepend>
+              <v-icon :icon="item.icon" class="mr-3"></v-icon>
+            </template>
             <v-list-item-title>{{ item.title }}</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-card>
     </v-menu>
 
-    <!-- Drawer móvel -->
-    <v-navigation-drawer v-model="drawer" app temporary right width="280">
-      <v-toolbar flat color="primary" dark>
-        <v-toolbar-title>Menu</v-toolbar-title>
-        <v-spacer />
-        <v-btn icon @click="drawer = false"><v-icon>mdi-close</v-icon></v-btn>
-      </v-toolbar>
-      <v-divider />
-      <v-list nav dense>
+    <v-navigation-drawer
+      v-model="drawer"
+      temporary
+      right
+      width="280"
+      class="pt-4"
+    >
+      <v-list nav>
+        <v-list-item>
+          <v-avatar size="40" class="mr-3" color="primary">
+            <span class="text-white">{{ userInitial }}</span>
+          </v-avatar>
+
+          <v-list-item-title class="font-weight-bold">
+            {{ authStore.user?.username }}
+          </v-list-item-title>
+        </v-list-item>
+
+        <v-divider class="my-3" />
+
         <v-list-item
           v-for="item in navItems"
           :key="item.route"
           :to="{ name: item.route }"
-          @click="closeMobileMenu"
         >
-          <v-list-item-icon
-            ><v-icon>{{ item.icon }}</v-icon></v-list-item-icon
-          >
+          <template #prepend>
+            <v-icon>{{ item.icon }}</v-icon>
+          </template>
+          <v-list-item-title>{{ item.title }}</v-list-item-title>
+        </v-list-item>
+
+        <v-list-item v-if="authStore.isAdmin" :to="{ name: 'admin-users' }">
+          <template #prepend>
+            <v-icon>mdi-shield-account</v-icon>
+          </template>
+          <v-list-item-title>Admin</v-list-item-title>
+        </v-list-item>
+
+        <v-divider class="mt-3" />
+
+        <v-list-item @click="toggleTheme">
+          <template #prepend>
+            <v-icon>{{
+              isDark ? "mdi-weather-sunny" : "mdi-weather-night"
+            }}</v-icon>
+          </template>
+          <v-list-item-title>
+            Tema: {{ isDark ? "Claro" : "Escuro" }}
+          </v-list-item-title>
+        </v-list-item>
+
+        <v-list-item
+          v-for="item in userMenuItems"
+          :key="item.title"
+          @click="handleUserMenuItemClick(item.action)"
+          :class="{ 'text-error': item.isDanger }"
+        >
+          <template #prepend>
+            <v-icon>{{ item.icon }}</v-icon>
+          </template>
           <v-list-item-title>{{ item.title }}</v-list-item-title>
         </v-list-item>
       </v-list>
-      <div class="pa-4">
-        <v-btn
-          block
-          color="primary"
-          variant="outlined"
-          @click="logoutAndRedirect"
-          prepend-icon="mdi-logout"
-        >
-          Sair
-        </v-btn>
-      </div>
     </v-navigation-drawer>
   </v-app-bar>
 </template>
@@ -194,14 +200,17 @@
 import { ref, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useTheme, useDisplay } from "vuetify";
+import { useAuthStore } from "~/stores/useAuthStore";
 
 type RouteName =
   | "index"
   | "dashboard"
   | "profile"
+  | "profile-linking"
   | "settings"
   | "login"
-  | "notifications";
+  | "notifications"
+  | "admin-users";
 
 interface NavItem {
   title: string;
@@ -211,120 +220,141 @@ interface NavItem {
 interface UserMenuItem {
   title: string;
   icon: string;
-  action: "profile" | "settings" | "logout";
+  action:
+    | "profile"
+    | "settings"
+    | "logout"
+    | "profile-linking"
+    | "toggle-dashboard";
   isDanger: boolean;
 }
-interface Notification {
-  id: number;
-  title: string;
-  message: string;
-  icon?: string;
-  read: boolean;
-  action?: string;
-}
-interface Emits {
-  (e: "logout"): void;
-  (e: "toggle-theme"): void;
-}
-const emit = defineEmits<Emits>();
 
-const NAV_ITEMS: ReadonlyArray<NavItem> = [
-  // { title: "Início", icon: "mdi-home", route: "index" },
-  { title: "Dashboard", icon: "mdi-chart-box", route: "dashboard" },
-];
-
-const USER_MENU_ITEMS: ReadonlyArray<UserMenuItem> = [
-  {
-    title: "Meu Perfil",
-    icon: "mdi-account",
-    action: "profile",
-    isDanger: false,
-  },
-  {
-    title: "Configurações",
-    icon: "mdi-cog",
-    action: "settings",
-    isDanger: false,
-  },
-  { title: "Sair", icon: "mdi-logout", action: "logout", isDanger: true },
-];
-
+const emit = defineEmits<{ (e: "logout"): void; (e: "toggle-theme"): void }>();
+const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 const theme = useTheme();
 const display = useDisplay();
-
 const drawer = ref(false);
 const userMenu = ref(false);
 
-const notifications = ref<Notification[]>([
-  {
-    id: 1,
-    title: "Bem-vindo ao Gestão de Gastos!",
-    message: "Explore os recursos e comece a controlar suas finanças.",
-    icon: "mdi-hand-wave-outline",
-    read: false,
-    action: "/welcome",
-  },
-  {
-    id: 3,
-    title: "Lembrete de Categorização",
-    message: "Você tem 3 despesas sem categoria.",
-    icon: "mdi-tag-text-outline",
-    read: false,
-    action: "/expenses?filter=uncategorized",
-  },
-  {
-    id: 4,
-    title: "Dica de Economia",
-    message: "Considere criar um orçamento.",
-    icon: "mdi-lightbulb-on-outline",
-    read: true,
-    action: "/budgets",
-  },
-]);
+const navItems = computed(() => {
+  return [
+    {
+      title: authStore.mainDashboardTitle,
+      icon: "mdi-chart-box",
+      route: "dashboard",
+    },
+  ];
+});
 
-const navItems = computed(() => [...NAV_ITEMS]);
-const userMenuItems = computed(() => [...USER_MENU_ITEMS]);
-const unreadNotifications = computed(
-  () => notifications.value.filter((n) => !n.read).length
-);
+const userMenuItems = computed(() => {
+  const menu: UserMenuItem[] = [
+    {
+      title: "Meu Perfil",
+      icon: "mdi-account-circle-outline",
+      action: "profile",
+      isDanger: false,
+    },
+  ];
+
+  if (authStore.canToggleDashboard) {
+    menu.push({
+      title: authStore.isPersonalDashboard
+        ? "Voltar ao Compartilhado"
+        : "Ver Dashboard Pessoal",
+      icon: authStore.isPersonalDashboard ? "mdi-account-group" : "mdi-account",
+      action: "toggle-dashboard",
+      isDanger: false,
+    });
+  }
+
+  if (authStore.user?.canLinkAccounts) {
+    menu.push({
+      title: "Vínculos de Contas",
+      icon: "mdi-link-variant",
+      action: "profile-linking",
+      isDanger: false,
+    });
+  }
+
+  menu.push(
+    // {
+    //   title: "Configurações",
+    //   icon: "mdi-cog-outline",
+    //   action: "settings",
+    //   isDanger: false,
+    // },
+    { title: "Sair", icon: "mdi-logout", action: "logout", isDanger: true }
+  );
+
+  return menu;
+});
+
+const userInitial = computed(() => {
+  return authStore.user?.username
+    ? authStore.user.username.charAt(0).toUpperCase()
+    : "?";
+});
 
 const isDark = computed(() => theme.global.current?.value?.dark === true);
 const isMobile = computed(() => display.smAndDown.value);
 const isDesktop = computed(() => display.mdAndUp.value);
-const isXs = computed(() => display.xs.value);
-
 const goHome = () => router.push({ name: "index" });
 const isRoute = (name: RouteName) => String(route.name || "") === name;
-
-const handleUserMenuItemClick = (action: UserMenuItem["action"]) => {
+const handleUserMenuItemClick = async (action: UserMenuItem["action"]) => {
   userMenu.value = false;
-  if (action === "logout") logoutAndRedirect();
-  else router.push(`/${action}`);
+  if (action === "logout") {
+    logoutAndRedirect();
+  } else if (action === "toggle-dashboard") {
+    await toggleDashboardContext();
+  } else if (action === "profile-linking") {
+    router.push("/profiles/linking");
+  } else if (action === "profile") {
+    router.push("/profile");
+  } else {
+    router.push(`/${action}`);
+  }
 };
 
-const toggleMobileMenu = () => (drawer.value = !drawer.value);
-const closeMobileMenu = () => (drawer.value = false);
-const onDrawerTransitionEnd = () => {
-  if (drawer.value)
-    document
-      .querySelector(".v-navigation-drawer__content .v-list-item:first-child")
-      ?.focus();
+const toggleDashboardContext = async () => {
+  try {
+    await authStore.toggleDashboardContext();
+    router.go(0);
+  } catch (e) {
+    console.error("Erro ao alternar dashboard:", e);
+  }
 };
 
-const markAsRead = (id: number) => {
-  const n = notifications.value.find((n) => n.id === id);
-  if (n) n.read = true;
-};
-const markAllAsRead = () => notifications.value.forEach((n) => (n.read = true));
-const handleNotificationClick = (notification: Notification) => {
-  markAsRead(notification.id);
-  if (notification.action) router.push(notification.action);
-};
 const toggleTheme = () => emit("toggle-theme");
 const logoutAndRedirect = () => {
   emit("logout");
-  router.push("/login");
 };
 </script>
+
+<style scoped>
+.nav-btn {
+  opacity: 0.85;
+  transition: 0.25s ease;
+  border-radius: 10px;
+}
+
+.nav-btn:hover {
+  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.active-nav {
+  background-color: rgba(255, 255, 255, 0.22) !important;
+  opacity: 1;
+  font-weight: 600;
+}
+
+.user-avatar {
+  transition: transform 0.15s ease;
+}
+
+.user-avatar:hover {
+  transform: scale(1.08);
+}
+</style>

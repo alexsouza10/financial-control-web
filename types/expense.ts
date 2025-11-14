@@ -14,6 +14,7 @@ export interface CreateExpensePayload {
   categoryId: string;
   value: number;
   date: string;
+  description?: string;
   paymentMethod: string;
   card?: string | null;
   installments: number;
@@ -23,6 +24,7 @@ export interface UpdateExpensePayload {
   categoryId?: string;
   value?: number;
   date?: string;
+  description?: string;
   paymentMethod?: string;
   card?: string;
   installments?: number;

@@ -1,41 +1,21 @@
 <template>
-  <v-container fluid class="pa-2 mt-4" style="max-width: 1600px">
-    <!-- Cabeçalho -->
-    <v-card class="mb-6 pa-4 rounded-md elevation-2">
-      <v-row justify="center" align="center">
-        <v-col cols="12" md="6" class="text-center">
-          <v-row class="justify-center align-center mb-2">
-            <v-icon color="primary" size="30" class="me-2">
-              mdi-finance
-            </v-icon>
-            <h2 class="text-h5 font-weight-medium mb-0">Painel Financeiro</h2>
-          </v-row>
-          <p class="text-body-2">
-            Organize seus gastos e mantenha suas finanças sob controle.
-          </p>
-        </v-col>
-      </v-row>
-    </v-card>
-
-    <!-- Skeletons enquanto carrega -->
+  <v-container fluid class="pa-4" style="max-width: 1600px">
     <div v-if="isLoading">
       <v-skeleton-loader type="image" height="110" class="mb-6" />
       <v-skeleton-loader type="list-item-avatar-two-line@5" />
     </div>
 
-    <!-- Conteúdo principal -->
     <v-slide-y-transition group appear v-else>
       <v-row>
-        <!-- Coluna esquerda: resumo e lista -->
         <v-col cols="12" md="5">
           <section class="mb-6">
             <ExpenseSummary />
-            <v-row class="mb-4" justify="center" align="center">
+            <v-row class="mt-4" justify="center" align="center">
               <v-col cols="auto">
                 <v-btn
                   color="primary"
-                  large
-                  rounded="md"
+                  size="large"
+                  rounded="lg"
                   elevation="6"
                   prepend-icon="mdi-plus-circle-outline"
                   @click="isRegisterDialogOpen = true"
@@ -48,27 +28,12 @@
           <ExpenseList />
         </v-col>
 
-        <!-- Coluna direita: dashboard -->
         <v-col cols="12" md="7">
           <ExpenseDashboard />
         </v-col>
       </v-row>
     </v-slide-y-transition>
 
-    <!-- Botão flutuante para mobile -->
-    <v-btn
-      v-if="$vuetify.display.smAndDown"
-      icon="mdi-plus"
-      color="primary"
-      fixed
-      bottom
-      right
-      large
-      class="ma-4 elevation-8"
-      @click="isRegisterDialogOpen = true"
-    />
-
-    <!-- Dialog de registro de gasto -->
     <v-dialog v-model="isRegisterDialogOpen" max-width="700" scrollable>
       <ExpenseRegisterCard
         @close="isRegisterDialogOpen = false"
@@ -76,7 +41,6 @@
       />
     </v-dialog>
 
-    <!-- Snackbar -->
     <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
@@ -98,9 +62,11 @@ import ExpenseList from "~/components/modules/expenses/ExpenseList.vue";
 import ExpenseDashboard from "~/components/modules/expenses/ExpenseDashboard.vue";
 import { useExpensesStore } from "~/stores/useExpensesStore";
 import { useCategoriesStore } from "~/stores/useCategoriesStore";
+import { useAuthStore } from "~/stores/useAuthStore";
 
 const expensesStore = useExpensesStore();
 const categoriesStore = useCategoriesStore();
+const authStore = useAuthStore();
 
 const isLoading = ref(true);
 const isRegisterDialogOpen = ref(false);
@@ -144,6 +110,12 @@ async function refreshData() {
     isLoading.value = false;
   }
 }
+
+const dashboardLabel = computed(() => {
+  if (authStore.isPersonalDashboard) return "Pessoal";
+  if (authStore.isLinked) return "Compartilhado";
+  return null;
+});
 
 onMounted(refreshData);
 </script>
