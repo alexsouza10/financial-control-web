@@ -14,14 +14,10 @@
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { useTheme } from "vuetify";
-import { useAuthStore } from "~/stores/useAuthStore";
 import AppHeader from "~/components/layouts/AppHeader.vue";
 import { useRoute } from "#app"; 
 
 const theme = ref("light");
-const vuetifyTheme = useTheme();
-const authStore = useAuthStore();
 const route = useRoute(); 
 
 const isAuthPage = computed(() => {

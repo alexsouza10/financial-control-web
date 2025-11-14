@@ -5,7 +5,6 @@
       rounded="md"
       elevation="2"
       color="primary"
-      theme="dark"
       style="position: sticky; top: 50px; z-index: 100"
     >
       <v-btn icon="mdi-chevron-left" variant="text" @click="previousMonth" />
@@ -349,3 +348,20 @@ onMounted(async () => {
   }
 });
 </script>
+
+<style scoped>
+:deep(.expense-paid) {
+  opacity: 0.6;
+  text-decoration: line-through;
+  transition: opacity 0.3s ease-in-out;
+}
+
+:deep(.expense-paid .v-checkbox-btn) {
+  text-decoration: none !important;
+  opacity: 1 !important;
+}
+
+:deep(.expense-paid td) {
+  text-decoration: inherit !important;
+}
+</style>

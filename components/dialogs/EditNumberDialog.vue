@@ -5,12 +5,26 @@
     persistent
     max-width="500"
   >
-    <v-card class="pa-6 elevation-3 rounded-xl">
-      <v-card-title class="text-h6 font-weight-bold pb-2">{{
-        title
-      }}</v-card-title>
+    <v-card class="elevation-3 rounded-lg">
+      <!-- Cabeçalho -->
+      <v-card-title
+        class="text-h6 font-weight-bold pa-4 pb-2 d-flex align-center justify-space-between"
+        :style="{ background: `rgb(var(--v-theme-primary))`, color: 'white' }"
+      >
+        {{ title }}
+        <v-btn
+          icon
+          variant="text"
+          size="small"
+          color="white"
+          @click="cancel"
+          class="ml-2"
+        >
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-card-title>
 
-      <v-card-text class="pb-0">
+      <v-card-text class="pa-4 pb-0">
         <v-form ref="form" @submit.prevent="save">
           <v-text-field
             v-if="isSalaryEditMode"
@@ -27,82 +41,110 @@
           />
 
           <template v-else>
-            <v-select
-              v-model="editedExpense.categoryId"
-              :items="categoriesStore.categories"
-              item-title="name"
-              item-value="id"
-              label="Categoria"
-              variant="outlined"
-              density="comfortable"
-              hide-details="auto"
-              class="mb-4"
-              required
-            />
-            <v-select
-              v-model="editedExpense.paymentMethod"
-              :items="paymentMethods"
-              label="Método de Pagamento"
-              variant="outlined"
-              density="comfortable"
-              hide-details="auto"
-              class="mb-4"
-              required
-            />
-            <v-text-field
-              v-if="editedExpense.paymentMethod === 'Cartão de Crédito'"
-              v-model.number="editedExpense.installments"
-              label="Parcelas"
-              type="number"
-              min="1"
-              variant="outlined"
-              density="comfortable"
-              hide-details="auto"
-              class="mb-4"
-            />
-            <v-select
-              v-if="editedExpense.paymentMethod === 'Cartão de Crédito'"
-              v-model="editedExpense.card"
-              :items="cardOptions"
-              label="Cartão"
-              variant="outlined"
-              density="comfortable"
-              hide-details="auto"
-              class="mb-4"
-            />
-            <v-text-field
-              v-model.number="editedExpense.value"
-              label="Valor"
-              type="number"
-              suffix="R$"
-              variant="outlined"
-              density="comfortable"
-              :rules="[valueRules.required, valueRules.minZero]"
-              hide-details="auto"
-              class="mb-4"
-            />
-            <DatePickerField
-              v-model="editedExpense.date"
-              label="Data do Gasto"
-              class="mb-2"
-              :rules="[valueRules.required]"
-            />
+            <v-row>
+              <v-col cols="12" sm="6">
+                <v-select
+                  v-model="editedExpense.categoryId"
+                  :items="categoriesStore.categories"
+                  item-title="name"
+                  item-value="id"
+                  label="Categoria"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
+                  required
+                />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-select
+                  v-model="editedExpense.paymentMethod"
+                  :items="paymentMethods"
+                  label="Método de Pagamento"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
+                  required
+                />
+              </v-col>
+            </v-row>
+
+            <v-expand-transition>
+              <div v-if="editedExpense.paymentMethod === 'Cartão de Crédito'">
+                <v-row class="mt-4">
+                  <v-col cols="12" sm="6">
+                    <v-text-field
+                      v-model.number="editedExpense.installments"
+                      label="Parcelas"
+                      type="number"
+                      min="1"
+                      variant="outlined"
+                      density="comfortable"
+                      hide-details="auto"
+                      :rules="[valueRules.minOneInstallment]"
+                    />
+                  </v-col>
+                  <v-col cols="12" sm="6">
+                    <v-select
+                      v-model="editedExpense.card"
+                      :items="cardOptions"
+                      label="Cartão"
+                      variant="outlined"
+                      density="comfortable"
+                      hide-details="auto"
+                    />
+                  </v-col>
+                </v-row>
+              </div>
+            </v-expand-transition>
+
+            <v-row class="mt-4">
+              <v-col cols="12" sm="6">
+                <v-text-field
+                  v-model.number="editedExpense.value"
+                  label="Valor"
+                  type="number"
+                  suffix="R$"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[valueRules.required, valueRules.minZero]"
+                  hide-details="auto"
+                />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <DatePickerField
+                  v-model="editedExpense.date"
+                  label="Data do Gasto"
+                  :rules="[valueRules.required]"
+                  density="comfortable"
+                />
+              </v-col>
+            </v-row>
+
             <v-text-field
               v-model="editedExpense.description"
               label="Descrição"
               variant="outlined"
               density="comfortable"
               hide-details="auto"
-              class="mb-4"
+              class="mt-4"
             />
           </template>
         </v-form>
       </v-card-text>
 
-      <v-card-actions class="pt-4">
+      <v-card-actions class="pa-4 pt-2">
         <v-spacer />
-        <v-btn variant="text" color="secondary" @click="cancel">Cancelar</v-btn>
-        <v-btn variant="flat" :color="confirmColor" @click="save">Salvar</v-btn>
+        <v-btn variant="text" color="grey-darken-1" @click="cancel">
+          Cancelar
+        </v-btn>
+        <v-btn
+          variant="flat"
+          :color="confirmColor"
+          @click="save"
+          class="font-weight-bold"
+        >
+          Salvar
+        </v-btn>
       </v-card-actions>
     </v-card>
 
@@ -118,6 +160,7 @@
     </v-snackbar>
   </v-dialog>
 </template>
+
 
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, PropType } from "vue";

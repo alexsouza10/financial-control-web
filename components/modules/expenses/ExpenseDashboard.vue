@@ -274,7 +274,8 @@
   <v-dialog v-model="isRuleDialogOpen" max-width="600" persistent>
     <v-card>
       <v-card-title
-        class="text-h6 d-flex align-center justify-space-between bg-primary-gradient"
+        class="text-h6 d-flex align-center justify-space-between"
+        :style="{ background: `rgb(var(--v-theme-primary))`, color: 'white' }"
       >
         <div class="d-flex align-center">
           <v-icon class="me-3" size="28">mdi-plus-circle-outline</v-icon>
@@ -664,6 +665,9 @@ const refreshData = async () => {
     console.error("Falha ao carregar dados do dashboard:", error);
   }
 };
+function closeCard() {
+  isRuleDialogOpen.value = false;
+}
 
 onMounted(() => {
   const savedRulePref = localStorage.getItem(RULES_ENABLED_KEY);

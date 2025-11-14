@@ -6,8 +6,8 @@
 
         <v-card>
           <v-card-title>
-            Todos os Usuários
-            <v-spacer></v-spacer>
+            Todos os Usuários <v-spacer></v-spacer>
+
             <v-btn
               icon
               @click="adminStore.fetchAllUsers"
@@ -30,30 +30,69 @@
             <thead>
               <tr>
                 <th class="text-left">ID</th>
+
                 <th class="text-left">Usuário</th>
+
                 <th class="text-left">Email</th>
+
+                <th class="text-center">Status</th>
+
+                <th class="text-center">Permite Vínculo</th>
+
                 <th class="text-center">Ações</th>
               </tr>
             </thead>
+
             <tbody>
               <tr v-if="adminStore.loading">
-                <td colspan="4" class="text-center">
+                <td colspan="6" class="text-center">
                   <v-progress-circular
                     indeterminate
                     color="primary"
                   ></v-progress-circular>
                 </td>
               </tr>
+
               <tr v-for="user in adminStore.users" :key="user.id">
                 <td>{{ user.id }}</td>
+
                 <td>{{ user.username }}</td>
+
                 <td>{{ user.email }}</td>
+
+                <td class="text-center">
+                  <v-chip
+                    :color="user.isActive ? 'success' : 'grey'"
+                    :text="user.isActive ? 'Ativo' : 'Inativo'"
+                    size="small"
+                  />
+                </td>
+
                 <td class="text-center">
                   <v-tooltip
                     :text="
-                      user.isActive ? 'Desativar Usuário' : 'Ativar Usuário'
+                      user.canLinkAccounts
+                        ? 'Desativar Recurso'
+                        : 'Ativar Recurso'
                     "
                   >
+                    <template v-slot:activator="{ props }">
+                      <v-switch
+                        v-bind="props"
+                        :model-value="user.canLinkAccounts"
+                        color="primary"
+                        hide-details
+                        density="compact"
+                        @change="
+                          toggleUserLinking(user.id, !user.canLinkAccounts)
+                        "
+                      />
+                    </template>
+                  </v-tooltip>
+                </td>
+
+                <td class="text-center">
+                  <v-tooltip text="Ativar/Desativar Usuário">
                     <template v-slot:activator="{ props }">
                       <v-btn
                         v-bind="props"
@@ -94,7 +133,6 @@
 import { onMounted } from "vue";
 import { useAuthStore } from "~/stores/useAuthStore";
 import { useAdminStore } from "~/stores/useAdminStore";
-import { navigateTo } from "#app";
 
 const authStore = useAuthStore();
 const adminStore = useAdminStore();
@@ -112,6 +150,21 @@ function toggleUserStatus(userId: number, newStatus: boolean) {
     )
   ) {
     adminStore.setUserActiveStatus(userId, newStatus);
+  }
+}
+
+async function toggleUserLinking(userId: number, newStatus: boolean) {
+  if (
+    confirm(
+      `Tem certeza que deseja ${
+        newStatus ? "ATIVAR" : "DESATIVAR"
+      } o recurso de vínculo para este usuário?`
+    )
+  ) {
+    await adminStore.setUserLinkingStatus(userId, newStatus);
+    if (authStore.user?.id === userId) {
+      await authStore.fetchUser();
+    }
   }
 }
 

@@ -1,67 +1,95 @@
-import { defineStore } from 'pinia';
-import { useNuxtApp } from '#app';
+import { defineStore } from "pinia";
+import { useNuxtApp } from "#app";
 
-interface UserProfile {
- id: number;
- username: string;
- email: string;
- role: string;   
- isActive: boolean;
+// Interface alinhada com o UserProfileDto do backend
+interface AdminUser {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  canLinkAccounts: boolean;
 }
 
 interface AdminState {
- users: UserProfile[];
- loading: boolean;
- error: string | null;
+  users: AdminUser[];
+  loading: boolean;
+  error: string | null;
 }
 
-export const useAdminStore = defineStore('admin', {
- state: (): AdminState => ({
-  users: [],
-  loading: false,
-  error: null,
- }),
+export const useAdminStore = defineStore("admin", {
+  state: (): AdminState => ({
+    users: [],
+    loading: false,
+    error: null,
+  }),
 
- actions: {
-  async fetchAllUsers() {
-   const { $api } = useNuxtApp();
-   this.loading = true;
-   this.error = null;
-   try {
-    const response = await $api.get<UserProfile[]>('/admin/users');
-    this.users = response.data;
-   } catch (err: any) {
-    this.error = 'Falha ao carregar usuários.';
-    console.error(err);
-   } finally {
-    this.loading = false;
-   }
+  actions: {
+    // AÇÃO 1: BUSCAR TODOS OS USUÁRIOS
+    async fetchAllUsers() {
+      const { $api } = useNuxtApp();
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await $api.get<AdminUser[]>("/admin/users");
+        this.users = response.data;
+      } catch (err: any) {
+        this.error = err.response?.data?.message || "Falha ao buscar usuários.";
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async setUserActiveStatus(userId: number, isActive: boolean) {
+      const { $api } = useNuxtApp();
+      this.error = null;
+
+      try {
+        if (isActive) {
+          await $api.post(`/admin/users/${userId}/activate`);
+        } else {
+          await $api.post(`/admin/users/${userId}/deactivate`);
+        }
+
+        const user = this.users.find((u) => u.id === userId);
+        if (user) user.isActive = isActive;
+      } catch (err: any) {
+        this.error =
+          err.response?.data?.message || "Falha ao atualizar status.";
+      }
+    },
+    // AÇÃO 3: ATIVAR/DESATIVAR VÍNCULO
+    async setUserLinkingStatus(userId: number, canLink: boolean) {
+      const { $api } = useNuxtApp();
+      this.error = null;
+      try {
+        // Chama o novo endpoint do AdminController
+        await $api.put(`/admin/users/${userId}/linking`, { canLink });
+
+        // Atualiza o estado local
+        const user = this.users.find((u) => u.id === userId);
+        if (user) {
+          user.canLinkAccounts = canLink;
+        }
+      } catch (err: any) {
+        this.error =
+          err.response?.data?.message || "Falha ao atualizar permissão.";
+      }
+    },
+
+    // AÇÃO 4: DELETAR USUÁRIO
+    async deleteUser(userId: number) {
+      const { $api } = useNuxtApp();
+      this.error = null;
+      try {
+        // Chama o novo endpoint do AdminController
+        await $api.delete(`/admin/users/${userId}`);
+
+        // Remove do estado local
+        this.users = this.users.filter((u) => u.id !== userId);
+      } catch (err: any) {
+        this.error = err.response?.data?.message || "Falha ao deletar usuário.";
+      }
+    },
   },
-
-  async setUserActiveStatus(userId: number, isActive: boolean) {
-   const { $api } = useNuxtApp();
-   const action = isActive ? 'activate' : 'deactivate';
-   try {
-    await $api.post(`/admin/users/${userId}/${action}`);
-    const user = this.users.find(u => u.id === userId);
-    if (user) { 
-     user.isActive = isActive;
-    }
-   } catch (err: any) {
-    this.error = `Falha ao ${action}r usuário.`;
-    console.error(err);
-   }
-  },
-
-  async deleteUser(userId: number) {
-   const { $api } = useNuxtApp();
-   try {
-    await $api.delete(`/admin/users/${userId}`);
-    this.users = this.users.filter(u => u.id !== userId);
-   } catch (err: any) {
-    this.error = 'Falha ao deletar usuário.';
-    console.error(err);
-   }
-  }
- }
 });
