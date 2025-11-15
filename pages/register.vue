@@ -3,23 +3,30 @@
     <v-row align="center" justify="center" no-gutters>
       <v-col cols="12" sm="10" md="7" lg="5" xl="4">
         <v-card
-          class="mx-auto pa-2 pa-sm-8 rounded-xl elevation-10"
+          class="mx-auto pa-4 pa-sm-8 rounded-xl elevation-10"
           max-width="600"
         >
-          <v-card-title class="text-center pb-2">
-            <v-icon size="56" color="primary" class="mb-3"
-              >mdi-account-plus-outline</v-icon
+          <v-card-title class="text-center pb-2 text-wrap">
+            <v-icon size="40" class="mb-1 mb-sm-3" color="primary">
+              mdi-account-plus-outline
+            </v-icon>
+
+            <h2
+              class="text-h6 text-sm-h4 font-weight-bold text-primary mt-2 mb-3"
             >
-            <h2 class="text-h4 font-weight-bold text-primary">Criar Conta</h2>
+              Criar <br class="d-sm-none" />
+              Conta
+            </h2>
           </v-card-title>
 
           <v-card-subtitle
-            class="text-center text-subtitle-1 mb-6 text-medium-emphasis"
+            class="text-center text-body-2 text-sm-body-1 mb-6 text-medium-emphasis text-wrap"
           >
-            Junte-se ao financial control para começar a gerir seus gastos.
+            Comece agora a controlar seus gastos com o<br class="d-sm-none" />
+            Financial Control.
           </v-card-subtitle>
 
-          <v-card-text>
+          <v-card-text class="mt-2">
             <v-form @submit.prevent="handleRegister" ref="registerForm">
               <v-text-field
                 label="Nome de Usuário"
@@ -30,7 +37,7 @@
                 :rules="[rules.required, rules.usernameMin]"
                 class="mb-4"
                 density="comfortable"
-              ></v-text-field>
+              />
 
               <v-text-field
                 label="E-mail"
@@ -41,7 +48,7 @@
                 :rules="[rules.required, rules.email]"
                 class="mb-4"
                 density="comfortable"
-              ></v-text-field>
+              />
 
               <v-text-field
                 label="Senha"
@@ -54,7 +61,7 @@
                 :rules="[rules.required, rules.passwordMin]"
                 class="mb-4"
                 density="comfortable"
-              ></v-text-field>
+              />
 
               <v-text-field
                 label="Confirmar Senha"
@@ -69,7 +76,7 @@
                 :rules="[rules.required, rules.passwordsMatch]"
                 class="mb-4"
                 density="comfortable"
-              ></v-text-field>
+              />
 
               <v-alert
                 v-if="authStore.error"
@@ -86,13 +93,13 @@
           <v-divider class="my-4"></v-divider>
 
           <v-card-actions
-            class="d-flex justify-space-between align-center px-6 pb-6"
+            class="d-flex justify-space-between align-center px-4 px-sm-6 pb-6"
           >
             <v-btn
               color="secondary"
               variant="text"
               to="/login"
-              class="font-weight-medium"
+              class="font-weight-medium text-caption text-sm-body-2"
             >
               Já tenho uma conta
             </v-btn>
