@@ -264,7 +264,7 @@
       <v-card>
         <v-card-title
           class="text-h6 d-flex align-center justify-space-between"
-          :style="{ background: `rgb(var(--v-theme-primary))` }"
+          :style="{ background: `rgb(var(--v-theme-primary))`, color: 'white' }"
         >
           <div class="d-flex align-center">
             <v-icon class="me-3" size="24">mdi-tag-plus</v-icon>

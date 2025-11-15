@@ -17,7 +17,6 @@
         <v-icon color="primary" size="20">mdi-wallet-outline</v-icon>
       </v-avatar>
 
-      <!-- Desktop -->
       <span
         v-if="isDesktop"
         class="font-weight-bold text-h6"
@@ -25,50 +24,39 @@
       >
         Gestão Fácil
       </span>
-
-      <!-- Mobile -->
-      <span
-        v-else
-        class="font-weight-bold text-subtitle-1"
-        style="opacity: 0.95"
-      >
-        {{
-          !authStore.isLinked
-            ? "Dashboard Pessoal"
-            : authStore.mainDashboardTitle
-        }}
-      </span>
     </v-toolbar-title>
 
     <v-spacer />
 
-    <v-chip
-      v-if="isDesktop && authStore.isAuthenticated && authStore.isLinked"
-      :color="
-        authStore.isPersonalDashboard ? 'teal-lighten-4' : 'blue-grey-lighten-4'
-      "
-      size="small"
-      class="px-4 mr-3"
-      variant="flat"
-      style="border-radius: 10px; font-weight: 600"
-    >
-      <v-icon
-        start
-        size="18"
-        :icon="
-          authStore.isPersonalDashboard ? 'mdi-account' : 'mdi-account-group'
+    <div v-if="isDesktop" class="d-flex align-center" style="gap: 6px">
+      <v-chip
+        v-if="authStore.isAuthenticated && authStore.isLinked"
+        :color="
+          authStore.isPersonalDashboard
+            ? 'teal-lighten-4'
+            : 'blue-grey-lighten-4'
         "
-      />
-      {{ authStore.dashboardStatus }}
-    </v-chip>
+        size="small"
+        class="px-4"
+        variant="flat"
+        style="border-radius: 10px; font-weight: 600"
+      >
+        <v-icon
+          start
+          size="18"
+          :icon="
+            authStore.isPersonalDashboard ? 'mdi-account' : 'mdi-account-group'
+          "
+        />
+        {{ authStore.dashboardStatus }}
+      </v-chip>
 
-    <div v-if="isDesktop" class="d-flex align-center">
       <v-btn
         v-for="item in navItems"
         :key="item.route"
         :to="{ name: item.route }"
         variant="text"
-        class="mx-1 px-3 nav-btn"
+        class="px-3 nav-btn"
         :class="{ 'active-nav': isRoute(item.route) }"
       >
         <v-icon class="mr-1" size="20">{{ item.icon }}</v-icon>
@@ -79,7 +67,7 @@
         v-if="authStore.isAdmin"
         :to="{ name: 'admin-users' }"
         variant="text"
-        class="mx-1 px-3 nav-btn"
+        class="px-3 nav-btn"
         :class="{ 'active-nav': $route.path.startsWith('/admin') }"
       >
         <v-icon class="mr-1" size="20">mdi-shield-account</v-icon>
@@ -111,7 +99,6 @@
           </v-avatar>
         </v-btn>
       </template>
-
       <v-card elevation="10" class="py-2">
         <v-list density="comfortable">
           <v-list-item
@@ -129,71 +116,75 @@
       </v-card>
     </v-menu>
 
-    <v-navigation-drawer
-      v-model="drawer"
-      temporary
-      right
-      width="280"
-      class="pt-4"
-    >
-      <v-list nav>
-        <v-list-item>
-          <v-avatar size="40" class="mr-3" color="primary">
-            <span class="text-white">{{ userInitial }}</span>
-          </v-avatar>
-
-          <v-list-item-title class="font-weight-bold">
-            {{ authStore.user?.username }}
-          </v-list-item-title>
-        </v-list-item>
-
-        <v-divider class="my-3" />
-
-        <v-list-item
-          v-for="item in navItems"
-          :key="item.route"
-          :to="{ name: item.route }"
-        >
-          <template #prepend>
-            <v-icon>{{ item.icon }}</v-icon>
-          </template>
-          <v-list-item-title>{{ item.title }}</v-list-item-title>
-        </v-list-item>
-
-        <v-list-item v-if="authStore.isAdmin" :to="{ name: 'admin-users' }">
-          <template #prepend>
-            <v-icon>mdi-shield-account</v-icon>
-          </template>
-          <v-list-item-title>Admin</v-list-item-title>
-        </v-list-item>
-
-        <v-divider class="mt-3" />
-
-        <v-list-item @click="toggleTheme">
-          <template #prepend>
-            <v-icon>{{
-              isDark ? "mdi-weather-sunny" : "mdi-weather-night"
-            }}</v-icon>
-          </template>
-          <v-list-item-title>
-            Tema: {{ isDark ? "Claro" : "Escuro" }}
-          </v-list-item-title>
-        </v-list-item>
-
-        <v-list-item
-          v-for="item in userMenuItems"
-          :key="item.title"
-          @click="handleUserMenuItemClick(item.action)"
-          :class="{ 'text-error': item.isDanger }"
-        >
-          <template #prepend>
-            <v-icon>{{ item.icon }}</v-icon>
-          </template>
-          <v-list-item-title>{{ item.title }}</v-list-item-title>
-        </v-list-item>
-      </v-list>
-    </v-navigation-drawer>
+    <v-btn v-if="isMobile" icon variant="text" @click="drawer = !drawer">
+      <v-icon size="28">mdi-menu</v-icon>
+    </v-btn>
   </v-app-bar>
+
+  <v-navigation-drawer
+    v-model="drawer"
+    temporary
+    location="right"
+    width="280"
+    class="pt-4"
+  >
+    <v-list nav>
+      <v-list-item>
+        <v-avatar size="40" class="mr-3" color="primary">
+          <span class="text-white">{{ userInitial }}</span>
+        </v-avatar>
+
+        <v-list-item-title class="font-weight-bold">
+          {{ authStore.user?.username }}
+        </v-list-item-title>
+      </v-list-item>
+
+      <v-divider class="my-3" />
+
+      <v-list-item
+        v-for="item in navItems"
+        :key="item.route"
+        :to="{ name: item.route }"
+      >
+        <template #prepend>
+          <v-icon>{{ item.icon }}</v-icon>
+        </template>
+        <v-list-item-title>{{ item.title }}</v-list-item-title>
+      </v-list-item>
+
+      <v-list-item v-if="authStore.isAdmin" :to="{ name: 'admin-users' }">
+        <template #prepend>
+          <v-icon>mdi-shield-account</v-icon>
+        </template>
+        <v-list-item-title>Admin</v-list-item-title>
+      </v-list-item>
+
+      <v-divider class="mt-3" />
+
+      <v-list-item @click="toggleTheme">
+        <template #prepend>
+          <v-icon>
+            {{ isDark ? "mdi-weather-sunny" : "mdi-weather-night" }}
+          </v-icon>
+        </template>
+        <v-list-item-title>
+          Tema: {{ isDark ? "Claro" : "Escuro" }}
+        </v-list-item-title>
+      </v-list-item>
+
+      <v-list-item
+        v-for="item in userMenuItems"
+        :key="item.title"
+        @click="handleUserMenuItemClick(item.action)"
+        :class="{ 'text-error': item.isDanger }"
+      >
+        <template #prepend>
+          <v-icon>{{ item.icon }}</v-icon>
+        </template>
+        <v-list-item-title>{{ item.title }}</v-list-item-title>
+      </v-list-item>
+    </v-list>
+  </v-navigation-drawer>
 </template>
 
 <script setup lang="ts">
@@ -278,15 +269,12 @@ const userMenuItems = computed(() => {
     });
   }
 
-  menu.push(
-    // {
-    //   title: "Configurações",
-    //   icon: "mdi-cog-outline",
-    //   action: "settings",
-    //   isDanger: false,
-    // },
-    { title: "Sair", icon: "mdi-logout", action: "logout", isDanger: true }
-  );
+  menu.push({
+    title: "Sair",
+    icon: "mdi-logout",
+    action: "logout",
+    isDanger: true,
+  });
 
   return menu;
 });
@@ -300,14 +288,19 @@ const userInitial = computed(() => {
 const isDark = computed(() => theme.global.current?.value?.dark === true);
 const isMobile = computed(() => display.smAndDown.value);
 const isDesktop = computed(() => display.mdAndUp.value);
+
 const goHome = () => router.push({ name: "index" });
 const isRoute = (name: RouteName) => String(route.name || "") === name;
+
 const handleUserMenuItemClick = async (action: UserMenuItem["action"]) => {
   userMenu.value = false;
+  drawer.value = false;
+
   if (action === "logout") {
-    logoutAndRedirect();
+    emit("logout");
   } else if (action === "toggle-dashboard") {
-    await toggleDashboardContext();
+    await authStore.toggleDashboardContext();
+    router.go(0);
   } else if (action === "profile-linking") {
     router.push("/profiles/linking");
   } else if (action === "profile") {
@@ -317,19 +310,7 @@ const handleUserMenuItemClick = async (action: UserMenuItem["action"]) => {
   }
 };
 
-const toggleDashboardContext = async () => {
-  try {
-    await authStore.toggleDashboardContext();
-    router.go(0);
-  } catch (e) {
-    console.error("Erro ao alternar dashboard:", e);
-  }
-};
-
 const toggleTheme = () => emit("toggle-theme");
-const logoutAndRedirect = () => {
-  emit("logout");
-};
 </script>
 
 <style scoped>
